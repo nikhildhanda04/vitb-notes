@@ -24,6 +24,7 @@ model User {
   updatedAt     DateTime
   sessions      Session[]
   accounts      Account[]
+  notes         Note[]
 
   @@unique([email])
   @@map("user")
@@ -72,4 +73,31 @@ model Verification {
   updatedAt  DateTime?
 
   @@map("verification")
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  title     String
+  semester  String
+  year      String
+  branch    String
+  subject   String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topics    Topic[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("note")
+}
+
+model Topic {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  content     String   // Markdown content with formulas
+  noteId      String
+  note        Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@map("topic")
 }
