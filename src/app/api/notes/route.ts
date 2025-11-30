@@ -17,6 +17,10 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
+        if (session.user.role !== "admin") {
+            return NextResponse.json({ error: "Forbidden: Admins only" }, { status: 403 });
+        }
+
         const formData = await req.formData();
         const file = formData.get("file") as File | null;
         const syllabus = formData.get("syllabus") as string | null;

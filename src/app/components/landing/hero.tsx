@@ -1,5 +1,6 @@
-import { MoveRight } from "lucide-react"
+import { MoveRight,Github, NotebookPen } from "lucide-react"
 
+ 
 export default function Hero() {
     return(
         <>
@@ -25,11 +26,11 @@ export default function Hero() {
 
             {/* CTA */}
             <div className="flex flex-row gap-6 ">
-            <div>
-                Notes
+            <div className="px-8 py-2 bg-black items-center hover:border-r-6 hover:border-b-6 active:border-r-4 active:border-b-4 flex gap-3 text-white border-neutral-400 border-r-4 border-b-4 rounded-lg ">
+                Notes <NotebookPen size="20" />
             </div>
-            <div>
-                Contribute to Project
+            <div className="px-8 py-2 bg-neutral-100 items-center hover:border-r-6 hover:border-b-6 active:border-r-4 active:border-b-4 flex flex-row gap-3 border-neutral-400 border-r-4 border-b-4 rounded-lg">
+                Contribute to Project <Github size="20" />
             </div>
            </div>
             

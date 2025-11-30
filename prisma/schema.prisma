@@ -22,6 +22,7 @@ model User {
   image         String?
   createdAt     DateTime
   updatedAt     DateTime
+  role          String?   @default("user")
   sessions      Session[]
   accounts      Account[]
   notes         Note[]
