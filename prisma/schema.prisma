@@ -78,11 +78,13 @@ model Verification {
 
 model Note {
   id        String   @id @default(cuid())
-  title     String
+  module    String
   semester  String
   year      String
   branch    String
+  specialization String?
   subject   String
+  subjectCode String?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   topics    Topic[]

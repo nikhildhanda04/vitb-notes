@@ -21,12 +21,14 @@ export default function Navbar() {
 
     return (
         <>
-            <div className="flex flex-row fixed items-center justify-between w-full px-24 py-8 z-50 bg-white/80 backdrop-blur-sm">
+            <div className="flex flex-row items-center justify-between w-full px-24 py-8 z-50 bg-white/80 backdrop-blur-sm">
 
                 <div className="flex flex-row items-center gap-20">
-                    <div className="font-jakarta dark:text-neutral-50 text-3xl font-bold tracking-tighter">
+                    <a 
+                    href="/" 
+                    className="font-jakarta dark:text-neutral-50 text-3xl font-bold tracking-tighter">
                         VitB Notes
-                    </div>
+                    </a>
 
                     <div className="flex flex-row dark:text-neutral-50 items-center gap-8">
                         <Link href="/">About</Link>
@@ -39,9 +41,22 @@ export default function Navbar() {
 
                     <div>
                         {session && (
-                            <span className="font-poppins text-sm text-neutral-600">
-                                Hi, {session.user.name}
-                            </span>
+                            <div className="flex items-center gap-3">
+                                {session.user.image ? (
+                                    <img
+                                        src={session.user.image}
+                                        alt={session.user.name}
+                                        className="w-8 h-8 rounded-full object-cover border border-neutral-200"
+                                    />
+                                ) : (
+                                    <div className="w-8 h-8 rounded-full bg-neutral-200 flex items-center justify-center text-neutral-600 font-bold text-xs border border-neutral-300">
+                                        {session.user.name.charAt(0).toUpperCase()}
+                                    </div>
+                                )}
+                                <span className="font-poppins text-sm text-neutral-600 hidden md:block">
+                                    {session.user.name}
+                                </span>
+                            </div>
                         )}
                     </div>
 

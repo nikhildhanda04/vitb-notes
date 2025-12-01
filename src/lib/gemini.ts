@@ -3,7 +3,10 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function generateNotes(syllabus: string, sourceText: string) {
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.0-flash",
+    generationConfig: { responseMimeType: "application/json" },
+  });
 
   const prompt = `
     You are an expert educational assistant. Your task is to generate detailed, high-quality study notes based on the provided **Syllabus** and **Source Material**.
@@ -17,35 +20,58 @@ export async function generateNotes(syllabus: string, sourceText: string) {
         *   Bullet points for readability
         *   Formulas using LaTeX syntax (e.g., $E=mc^2$)
         *   Code snippets where applicable
-        *   Diagram descriptions (e.g., [Diagram: Description of the diagram]) if a diagram would be helpful.
-    5.  **Output**: Return the result strictly as a JSON array of objects.
+        *   **Diagrams**: Use Mermaid.js syntax for diagrams. Wrap them in a code block with the language \`mermaid\`.
+            Example:
+            \`\`\`mermaid
+            graph TD;
+  A-- > B;
+  \`\`\`
+            Provide a diagram whenever it helps explain a concept (e.g., flowcharts, system architectures, sequences).
+    5.  **Output**: Return the result strictly as a valid JSON array of objects. Ensure all strings are properly escaped, especially backslashes in LaTeX formulas and code snippets. Do not include any markdown formatting outside the JSON array.
 
     **Syllabus:**
     ${syllabus}
 
     **Source Material:**
-    ${sourceText.slice(0, 50000)} // Limit input to avoid token limits.
+    ${sourceText ? sourceText.slice(0, 50000) : "No source material provided. Use your general knowledge to generate notes based on the syllabus."}
 
     **Output Format (JSON Array):**
     [
       {
         "title": "Topic Title (from Syllabus)",
         "description": "Brief summary",
-        "content": "# Heading\n\nDetailed explanation...\n\n$$ Formula $$"
+        "content": "# Heading\\n\\nDetailed explanation...\\n\\n$$ Formula $$"
       }
     ]
   `;
 
-  const result = await model.generateContent(prompt);
-  const response = await result.response;
-  const textResponse = response.text();
+  const maxRetries = 3;
+  let retryCount = 0;
 
-  try {
-    // Clean up markdown code blocks if Gemini wraps the JSON in ```json ... ```
-    const cleanedText = textResponse.replace(/```json/g, "").replace(/```/g, "").trim();
-    return JSON.parse(cleanedText);
-  } catch (error) {
-    console.error("Failed to parse Gemini response:", textResponse);
-    throw new Error("Failed to generate valid JSON from AI response");
+  while (retryCount < maxRetries) {
+    try {
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const textResponse = response.text();
+
+      try {
+        return JSON.parse(textResponse);
+      } catch (error) {
+        console.error("Failed to parse Gemini response. Raw response:", textResponse);
+        throw new Error(`Failed to generate valid JSON from AI response. Raw: ${textResponse.slice(0, 200)}...`);
+      }
+    } catch (error: any) {
+      if (error.message.includes("429") || error.status === 429) {
+        retryCount++;
+        if (retryCount === maxRetries) {
+          throw error; // Rethrow if max retries reached
+        }
+        const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff: 2s, 4s, 8s
+        console.log(`Rate limited (429). Retrying in ${delay}ms... (Attempt ${retryCount + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        throw error; // Rethrow other errors immediately
+      }
+    }
   }
 }

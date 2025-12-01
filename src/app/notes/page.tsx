@@ -1,18 +1,23 @@
 'use client'
 
 import { useEffect, useState } from "react"
-import Navbar from "../components/common/navbar"
-import { Loader2, Search, BookOpen, Calendar, GraduationCap, GitBranch } from "lucide-react"
-import Link from "next/link"
+import Navbar from "@/components/common/navbar"
+import { Loader2, Search } from "lucide-react"
+import { NoteCard } from "@/components/note/note-card"
 
 interface Note {
     id: string
-    title: string
+    module: string
     semester: string
     year: string
     branch: string
     subject: string
     createdAt: string
+    topics: {
+        id: string
+        title: string
+        description: string
+    }[]
     user: {
         name: string
     }
@@ -42,9 +47,9 @@ export default function NotesPage() {
     }
 
     const filteredNotes = notes.filter(note =>
-        note.title.toLowerCase().includes(search.toLowerCase()) ||
         note.subject.toLowerCase().includes(search.toLowerCase()) ||
-        note.branch.toLowerCase().includes(search.toLowerCase())
+        note.branch.toLowerCase().includes(search.toLowerCase()) ||
+        note.module.toLowerCase().includes(search.toLowerCase())
     )
 
     return (
@@ -79,36 +84,7 @@ export default function NotesPage() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {filteredNotes.map(note => (
-                            <Link href={`/notes/${note.id}`} key={note.id}>
-                                <div className="group flex flex-col gap-4 p-6 bg-neutral-50 rounded-xl border border-neutral-200 hover:border-black transition-all duration-200 hover:shadow-lg cursor-pointer h-full">
-                                    <div className="flex justify-between items-start">
-                                        <div className="p-3 bg-white rounded-lg border border-neutral-100 group-hover:border-neutral-300 transition-colors">
-                                            <BookOpen className="w-6 h-6 text-neutral-700" />
-                                        </div>
-                                        <span className="text-xs font-bold px-2 py-1 bg-neutral-200 rounded text-neutral-600">
-                                            {note.branch}
-                                        </span>
-                                    </div>
-
-                                    <div className="flex flex-col gap-2">
-                                        <h3 className="font-inter font-bold text-xl text-neutral-800 line-clamp-2 group-hover:text-black">
-                                            {note.title}
-                                        </h3>
-                                        <p className="font-poppins text-sm text-neutral-500">
-                                            {note.subject}
-                                        </p>
-                                    </div>
-
-                                    <div className="mt-auto pt-4 flex items-center gap-4 text-xs text-neutral-400 font-poppins border-t border-neutral-200">
-                                        <div className="flex items-center gap-1">
-                                            <GraduationCap className="w-3 h-3" /> Sem {note.semester}
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            <Calendar className="w-3 h-3" /> {note.year}
-                                        </div>
-                                    </div>
-                                </div>
-                            </Link>
+                            <NoteCard key={note.id} note={note} />
                         ))}
                     </div>
                 )}

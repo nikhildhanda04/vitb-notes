@@ -24,13 +24,15 @@ export async function POST(req: Request) {
         const formData = await req.formData();
         const file = formData.get("file") as File | null;
         const syllabus = formData.get("syllabus") as string | null;
-        const title = formData.get("title") as string;
+        const module = formData.get("module") as string;
         const semester = formData.get("semester") as string;
         const year = formData.get("year") as string;
         const branch = formData.get("branch") as string;
+        const specialization = formData.get("specialization") as string | null;
         const subject = formData.get("subject") as string;
+        const subjectCode = formData.get("subjectCode") as string | null;
 
-        if (!syllabus || !title || !semester || !year || !branch || !subject) {
+        if (!syllabus || !module || !semester || !year || !branch || !subject) {
             return NextResponse.json({ error: "Missing required fields (syllabus is required)" }, { status: 400 });
         }
 
@@ -45,23 +47,26 @@ export async function POST(req: Request) {
             }
         }
 
-        // Generate notes using Gemini
         let generatedTopics;
         try {
             generatedTopics = await generateNotes(syllabus, sourceText);
         } catch (error) {
             console.error("AI Generation error:", error);
-            return NextResponse.json({ error: "Failed to generate notes with AI" }, { status: 500 });
+            return NextResponse.json({
+                error: "Failed to generate notes with AI",
+                details: error instanceof Error ? error.message : String(error)
+            }, { status: 500 });
         }
 
-        // Save to database
         const note = await prisma.note.create({
             data: {
-                title,
+                module,
                 semester,
                 year,
                 branch,
+                specialization,
                 subject,
+                subjectCode,
                 userId: session.user.id,
                 topics: {
                     create: generatedTopics.map((topic: any) => ({
@@ -79,7 +84,10 @@ export async function POST(req: Request) {
         return NextResponse.json(note);
     } catch (error) {
         console.error("Error creating note:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        return NextResponse.json({
+            error: "Internal Server Error",
+            details: error instanceof Error ? error.message : String(error)
+        }, { status: 500 });
     }
 }
 
@@ -101,11 +109,13 @@ export async function GET(req: Request) {
             where,
             select: {
                 id: true,
-                title: true,
+                module: true,
                 semester: true,
                 year: true,
                 branch: true,
+                specialization: true,
                 subject: true,
+                subjectCode: true,
                 createdAt: true,
                 topics: {
                     select: {

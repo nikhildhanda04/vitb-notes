@@ -124,7 +124,7 @@ export function AuthDialog({ children, defaultTab = "login" }: AuthDialogProps) 
                                 <Input
                                     id="email"
                                     type="email"
-                                    placeholder="john@example.com"
+                                    placeholder="email@example.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
@@ -160,7 +160,7 @@ export function AuthDialog({ children, defaultTab = "login" }: AuthDialogProps) 
                                 <Label htmlFor="name">Name</Label>
                                 <Input
                                     id="name"
-                                    placeholder="John Doe"
+                                    placeholder="username"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     required
@@ -171,7 +171,7 @@ export function AuthDialog({ children, defaultTab = "login" }: AuthDialogProps) 
                                 <Input
                                     id="email"
                                     type="email"
-                                    placeholder="john@example.com"
+                                    placeholder="email@example.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required

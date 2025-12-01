@@ -1,0 +1,79 @@
+"use client"
+
+import React from "react"
+import ReactMarkdown from "react-markdown"
+import remarkMath from "remark-math"
+import remarkGfm from "remark-gfm"
+import rehypeKatex from "rehype-katex"
+import "katex/dist/katex.min.css"
+import { MermaidDiagram } from "@/components/ui/mermaid-diagram"
+import { CodeBlock } from "@/components/ui/code-block"
+import { cn } from "@/lib/utils"
+
+interface NoteContentProps {
+    content: string
+    font: "inter" | "poppins" | "serif"
+    fontSize: number
+}
+
+export function NoteContent({ content, font, fontSize }: NoteContentProps) {
+    const fontClass = {
+        inter: "font-inter",
+        poppins: "font-poppins",
+        serif: "font-serif",
+    }[font]
+
+    return (
+        <div
+            className={cn("prose prose-neutral max-w-none", fontClass)}
+            style={{ fontSize: `${fontSize}px` }}
+        >
+            <ReactMarkdown
+                remarkPlugins={[remarkMath, remarkGfm]}
+                rehypePlugins={[rehypeKatex]}
+                components={{
+                    code({ className, children, ...props }) {
+                        const match = /language-(\w+)/.exec(className || "")
+                        const isMermaid = match && match[1] === "mermaid"
+
+                        if (isMermaid) {
+                            return <MermaidDiagram chart={String(children).replace(/\n$/, "")} />
+                        }
+
+                        // If it's a code block (has language or is multiline), use CodeBlock
+                        if (match) {
+                            return (
+                                <CodeBlock
+                                    language={match[1]}
+                                    value={String(children).replace(/\n$/, "")}
+                                    className={className}
+                                />
+                            )
+                        }
+
+                        // Inline code
+                        return (
+                            <code className={cn("bg-zinc-100 text-zinc-800 px-1.5 py-0.5 rounded font-mono text-sm", className)} {...props}>
+                                {children}
+                            </code>
+                        )
+                    },
+                    // Custom styling for other elements if needed
+                    h1: ({ children }) => <h1 className="text-2xl font-bold mt-6 mb-4">{children}</h1>,
+                    h2: ({ children }) => <h2 className="text-xl font-bold mt-5 mb-3">{children}</h2>,
+                    h3: ({ children }) => <h3 className="text-lg font-bold mt-4 mb-2">{children}</h3>,
+                    p: ({ children }) => <p className="mb-4 leading-relaxed">{children}</p>,
+                    ul: ({ children }) => <ul className="list-disc pl-6 mb-4 space-y-1">{children}</ul>,
+                    ol: ({ children }) => <ol className="list-decimal pl-6 mb-4 space-y-1">{children}</ol>,
+                    blockquote: ({ children }) => (
+                        <blockquote className="border-l-4 border-neutral-200 pl-4 italic text-neutral-600 my-4">
+                            {children}
+                        </blockquote>
+                    ),
+                }}
+            >
+                {content}
+            </ReactMarkdown>
+        </div >
+    )
+}
