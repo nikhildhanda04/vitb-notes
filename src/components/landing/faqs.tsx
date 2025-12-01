@@ -24,9 +24,9 @@ const faqData = [
 
 export default function FAQs() {
     return (
-        <div className="px-48 py-24 flex flex-col gap-12 items-center justify-center bg-white">
+        <div className="px-48 py-24 flex flex-col gap-12 items-center justify-center bg-white dark:bg-transparent">
             <div className="flex flex-col gap-6 text-center">
-                <div className="font-inter text-5xl font-bold">
+                <div className="font-inter text-5xl font-bold dark:text-neutral-100">
                     Frequently Asked Questions
                 </div>
                 <div className="font-poppins text-base px-48 text-neutral-400">
@@ -50,15 +50,15 @@ function FAQItem({ question, answer }: { question: string, answer: string }) {
         <div
             onClick={() => setIsOpen(!isOpen)}
             className={`
-                flex flex-col bg-neutral-100 rounded-lg border-neutral-600 cursor-pointer transition-all duration-150 ease-in overflow-hidden
-                ${isOpen ? 'border-r-2 border-b-2' : 'border-r-6 border-b-6 hover:border-b-4 hover:border-r-4'}
+                flex flex-col bg-neutral-100 dark:bg-neutral-900 rounded-lg border-neutral-600 cursor-pointer transition-all duration-150 ease-in overflow-hidden
+                ${isOpen ? 'shadow-[4px_4px_0px_0px_#737373]' : 'shadow-[6px_6px_0px_0px_#737373]'}
             `}
         >
             <div className="flex justify-between items-center p-6">
-                <div className="font-inter font-bold text-lg text-neutral-800">
+                <div className="font-inter font-bold text-lg text-neutral-800 dark:text-neutral-100">
                     {question}
                 </div>
-                <div className={`text-neutral-600 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>
+                <div className={`text-neutral-600 dark:text-neutral-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>
                     <ChevronDown />
                 </div>
             </div>
@@ -70,7 +70,7 @@ function FAQItem({ question, answer }: { question: string, answer: string }) {
                 `}
             >
                 <div className="overflow-hidden">
-                    <div className="px-6 pb-6 font-poppins text-neutral-500 text-base">
+                    <div className="px-6 pb-6 font-poppins text-neutral-500 dark:text-neutral-400 text-base">
                         {answer}
                     </div>
                 </div>

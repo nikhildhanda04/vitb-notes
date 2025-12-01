@@ -12,6 +12,7 @@ interface Note {
     year: string
     branch: string
     subject: string
+    subjectCode?: string
     createdAt: string
     topics: {
         id: string
@@ -53,26 +54,26 @@ export default function NotesPage() {
     )
 
     return (
-        <div className="min-h-screen bg-white flex flex-col">
+        <div className="min-h-screen bg-white dark:bg-transparent flex flex-col">
             <Navbar />
 
             <div className="flex-1 flex flex-col px-24 py-12 gap-12">
                 <div className="flex flex-col gap-6 text-center items-center">
-                    <h1 className="font-inter text-5xl font-bold text-neutral-800">
-                        Explore Notes
+                    <h1 className="font-inter text-5xl font-bold text-neutral-800 dark:text-neutral-100">
+                        Explore All Notes!
                     </h1>
-                    <p className="font-poppins text-neutral-500 max-w-2xl">
+                    <p className="font-poppins text-neutral-500 dark:text-neutral-400 max-w-2xl">
                         Access high-quality, AI-generated notes for your courses. Search by subject, branch, or title.
                     </p>
 
                     <div className="relative w-full max-w-xl">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 w-5 h-5" />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 w-5 h-5" />
                         <input
                             type="text"
                             placeholder="Search notes..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full pl-12 pr-4 py-3 rounded-full border-2 border-neutral-200 focus:border-black outline-none font-poppins transition-colors"
+                            className="w-full pl-12 pr-4 py-3 rounded-md shadow-[6px_6px_0px_0px_#737373] hover:shadow-[8px_8px_0px_0px_#737373] active:shadow-[4px_4px_0px_0px_#737373] transition-shadow duration-100 ease-in border-2 border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 dark:text-neutral-100 focus:border-black dark:focus:border-white outline-none font-poppins transition-colors"
                         />
                     </div>
                 </div>

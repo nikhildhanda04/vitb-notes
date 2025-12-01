@@ -98,7 +98,7 @@ export default function NoteDetailsPage({ params }: { params: Promise<{ id: stri
     }
 
     return (
-        <div className="min-h-screen bg-zinc-50 flex flex-col relative">
+        <div className="min-h-screen bg-zinc-50 dark:bg-transparent flex flex-col relative">
             <Navbar />
 
             {/* Floating Controls */}
@@ -112,35 +112,35 @@ export default function NoteDetailsPage({ params }: { params: Promise<{ id: stri
 
             <div className="flex-1 max-w-4xl mx-auto w-full px-4 md:px-8 py-8 md:py-12">
                 <div className="flex flex-col gap-8">
-                    <Link href="/notes" className="flex items-center gap-2 text-neutral-500 hover:text-black transition-colors font-poppins text-sm w-fit">
+                    <Link href="/notes" className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white transition-colors font-poppins text-sm w-fit">
                         <ArrowLeft className="w-4 h-4" /> Back to Notes
                     </Link>
 
                     {/* Header Card */}
-                    <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-8 flex flex-col gap-6">
-                        <div className="flex flex-col gap-4">
-                            <h1 className="text-4xl font-bold text-zinc-900 tracking-tight">
+                    <div className="bg-white dark:bg-neutral-900 rounded-md shadow-[6px_6px_0px_0px_#737373]  hover:shadow-[9px_9px_0px_0px_#737373] transition-shadow duration-100 ease-in border border-zinc-200 dark:border-zinc-700 p-8 flex flex-col gap-6">
+                        <div className="flex flex-col  gap-4">
+                            <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
                                 {note.subject}
                             </h1>
-                            <p className="text-lg text-zinc-600 leading-relaxed">
+                            <p className="text-lg text-zinc-600 dark:text-zinc-400 leading-relaxed">
                                 {note.module}
                             </p>
                         </div>
 
                         <div className="flex flex-wrap gap-3">
-                            <Badge variant="secondary" icon={<GraduationCap className="w-3.5 h-3.5" />}>
+                            <Badge variant="secondary" className="shadow-[3px_3px_0px_0px_#737373] hover:shadow-[4px_4px_0px_0px_#737373] transition-shadow duration-100 ease-in rounded-md" icon={<GraduationCap className="w-3.5 h-3.5" />}>
                                 {note.branch}
                             </Badge>
-                            <Badge variant="secondary" icon={<BookOpen className="w-3.5 h-3.5" />}>
+                            <Badge variant="secondary" className="shadow-[3px_3px_0px_0px_#737373] hover:shadow-[4px_4px_0px_0px_#737373] transition-shadow duration-100 ease-in rounded-md" icon={<BookOpen className="w-3.5 h-3.5" />}>
                                 Semester {note.semester}
                             </Badge>
-                            <Badge variant="secondary" icon={<Calendar className="w-3.5 h-3.5" />}>
+                            <Badge variant="secondary" className="shadow-[3px_3px_0px_0px_#737373] hover:shadow-[4px_4px_0px_0px_#737373] transition-shadow duration-100 ease-in rounded-md" icon={<Calendar className="w-3.5 h-3.5" />}>
                                 Year {note.year}
                             </Badge>
-                            <Badge variant="secondary">
+                            <Badge variant="secondary" className="shadow-[3px_3px_0px_0px_#737373] hover:shadow-[4px_4px_0px_0px_#737373] transition-shadow duration-100 ease-in rounded-md">
                                 Notes
                             </Badge>
-                            <Badge variant="secondary">
+                            <Badge variant="secondary" className="shadow-[3px_3px_0px_0px_#737373] hover:shadow-[4px_4px_0px_0px_#737373] transition-shadow duration-100 ease-in rounded-md">
                                 {note.topics.length} Topics
                             </Badge>
                         </div>
@@ -151,15 +151,15 @@ export default function NoteDetailsPage({ params }: { params: Promise<{ id: stri
                         {note.topics.map((topic, index) => (
                             <div key={topic.id} id={topic.id} className="flex flex-col gap-4 scroll-mt-32">
                                 <div className="flex items-baseline gap-4">
-                                    <span className="font-inter font-bold text-2xl text-zinc-300">
+                                    <span className="font-inter font-bold text-2xl text-zinc-300 dark:text-zinc-600">
                                         {(index + 1).toString().padStart(2, '0')}
                                     </span>
-                                    <h2 className="font-inter font-bold text-2xl text-zinc-900">
+                                    <h2 className="font-inter font-bold text-2xl text-zinc-900 dark:text-zinc-100">
                                         {topic.title}
                                     </h2>
                                 </div>
 
-                                <p className="font-poppins text-zinc-500 italic border-l-4 border-zinc-200 pl-4">
+                                <p className="font-poppins text-zinc-500 dark:text-zinc-400 italic border-l-4 border-zinc-200 dark:border-zinc-700 pl-4">
                                     {topic.description}
                                 </p>
 

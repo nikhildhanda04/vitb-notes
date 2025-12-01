@@ -24,21 +24,21 @@ export function FloatingSettings({
     setFontSize,
 }: FloatingSettingsProps) {
     return (
-        <div className="fixed right-8 top-1/2 -translate-y-1/2 z-50 hidden lg:flex flex-col gap-2 bg-white p-1.5 rounded-2xl shadow-xl border border-zinc-200">
+        <div className="fixed right-8 top-1/2 -translate-y-1/2 z-50 hidden lg:flex flex-col gap-2 bg-white dark:bg-neutral-900 p-1.5 rounded-2xl shadow-xl border border-zinc-200 dark:border-zinc-700">
             {/* Font Family */}
             <Popover>
                 <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-zinc-100 text-zinc-600">
+                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
                         <Type className="h-5 w-5" />
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent side="left" align="center" className="w-40 p-1.5 bg-white border-zinc-200 shadow-xl rounded-xl">
+                <PopoverContent side="left" align="center" className="w-40 p-1.5 bg-white dark:bg-neutral-900 border-zinc-200 dark:border-zinc-700 shadow-xl rounded-xl">
                     <div className="flex flex-col gap-1">
                         <button
                             onClick={() => setFont("inter")}
                             className={cn(
                                 "text-sm text-left px-3 py-2 rounded-lg transition-colors font-inter",
-                                font === "inter" ? "bg-zinc-100 text-zinc-900" : "text-zinc-600 hover:bg-zinc-50"
+                                font === "inter" ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800"
                             )}
                         >
                             Inter
@@ -47,7 +47,7 @@ export function FloatingSettings({
                             onClick={() => setFont("poppins")}
                             className={cn(
                                 "text-sm text-left px-3 py-2 rounded-lg transition-colors font-poppins",
-                                font === "poppins" ? "bg-zinc-100 text-zinc-900" : "text-zinc-600 hover:bg-zinc-50"
+                                font === "poppins" ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800"
                             )}
                         >
                             Poppins
@@ -56,7 +56,7 @@ export function FloatingSettings({
                             onClick={() => setFont("serif")}
                             className={cn(
                                 "text-sm text-left px-3 py-2 rounded-lg transition-colors font-serif",
-                                font === "serif" ? "bg-zinc-100 text-zinc-900" : "text-zinc-600 hover:bg-zinc-50"
+                                font === "serif" ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800"
                             )}
                         >
                             Serif
@@ -65,19 +65,19 @@ export function FloatingSettings({
                 </PopoverContent>
             </Popover>
 
-            <div className="h-px w-full bg-zinc-100" />
+            <div className="h-px w-full bg-zinc-100 dark:bg-zinc-700" />
 
             {/* Font Size Increase */}
             <Button
                 variant="ghost"
                 size="icon"
-                className="h-10 w-10 rounded-xl hover:bg-zinc-100 text-zinc-600"
+                className="h-10 w-10 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                 onClick={() => setFontSize(Math.min(24, fontSize + 1))}
             >
                 <Plus className="h-5 w-5" />
             </Button>
 
-            <div className="text-xs font-mono text-center text-zinc-400 py-1 select-none">
+            <div className="text-xs font-mono text-center text-zinc-400 dark:text-zinc-500 py-1 select-none">
                 {fontSize}
             </div>
 
@@ -85,19 +85,19 @@ export function FloatingSettings({
             <Button
                 variant="ghost"
                 size="icon"
-                className="h-10 w-10 rounded-xl hover:bg-zinc-100 text-zinc-600"
+                className="h-10 w-10 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                 onClick={() => setFontSize(Math.max(12, fontSize - 1))}
             >
                 <Minus className="h-5 w-5" />
             </Button>
 
-            <div className="h-px w-full bg-zinc-100" />
+            <div className="h-px w-full bg-zinc-100 dark:bg-zinc-700" />
 
             {/* Fullscreen (Mock) */}
             <Button
                 variant="ghost"
                 size="icon"
-                className="h-10 w-10 rounded-xl hover:bg-zinc-100 text-zinc-600"
+                className="h-10 w-10 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                 onClick={() => {
                     if (!document.fullscreenElement) {
                         document.documentElement.requestFullscreen().catch((e) => console.log(e));
