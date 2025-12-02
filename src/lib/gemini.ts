@@ -5,7 +5,10 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 export async function generateNotes(syllabus: string, sourceText: string) {
   const model = genAI.getGenerativeModel({
     model: "gemini-2.0-flash",
-    generationConfig: { responseMimeType: "application/json" },
+    generationConfig: {
+      responseMimeType: "application/json",
+      maxOutputTokens: 8192,
+    },
   });
 
   const prompt = `
@@ -21,11 +24,12 @@ export async function generateNotes(syllabus: string, sourceText: string) {
         *   Formulas using LaTeX syntax (e.g., $E=mc^2$)
         *   Code snippets where applicable
         *   **Diagrams**: Use Mermaid.js syntax for diagrams. Wrap them in a code block with the language \`mermaid\`.
+            IMPORTANT: Always quote node labels, especially if they contain special characters or spaces.
             Example:
             \`\`\`mermaid
             graph TD;
-  A-- > B;
-  \`\`\`
+            A["Start"] --> B["Process with & special chars"];
+            \`\`\`
             Provide a diagram whenever it helps explain a concept (e.g., flowcharts, system architectures, sequences).
     5.  **Output**: Return the result strictly as a valid JSON array of objects. Ensure all strings are properly escaped, especially backslashes in LaTeX formulas and code snippets. Do not include any markdown formatting outside the JSON array.
 
@@ -70,7 +74,15 @@ export async function generateNotes(syllabus: string, sourceText: string) {
       const textResponse = response.text();
 
       try {
-        return JSON.parse(textResponse);
+        // Use regex to extract the JSON object from the response
+        // This handles cases where the AI adds text before/after or uses markdown blocks
+        const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
+
+        if (!jsonMatch) {
+          throw new Error("No JSON object found in response");
+        }
+
+        return JSON.parse(jsonMatch[0]);
       } catch (error) {
         console.error("Failed to parse Gemini response. Raw response:", textResponse);
         throw new Error(`Failed to generate valid JSON from AI response. Raw: ${textResponse.slice(0, 200)}...`);

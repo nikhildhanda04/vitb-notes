@@ -116,7 +116,7 @@ export function GenerateForm({ user }: GenerateFormProps) {
 
                 <div className="p-6 bg-white border border-neutral-200 rounded-lg shadow-sm max-h-[60vh] overflow-y-auto">
                     <h2 className="text-2xl font-bold mb-4">Topics</h2>
-                    {previewData.topics.map((topic: any, i: number) => (
+                    {previewData.topics?.map((topic: any, i: number) => (
                         <div key={i} className="mb-6">
                             <h3 className="text-xl font-semibold mb-2">{topic.title}</h3>
                             <p className="text-neutral-600 mb-2">{topic.description}</p>

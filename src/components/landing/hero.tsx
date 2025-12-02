@@ -4,7 +4,10 @@ import { MoveRight, Github, NotebookPen } from "lucide-react"
 export default function Hero() {
     return (
         <>
-            <div className="flex flex-col items-center px-52 gap-16 h-screen -mt-24 justify-center">
+            <div className="relative overflow-hidden flex flex-col items-center px-52 gap-16 h-screen -mt-24 justify-center">
+                {/* Glow Effects */}
+                <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-white/2 blur-[120px] rounded-full pointer-events-none mix-blend-screen" />
+                <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-zinc-500/2 blur-[120px] rounded-full pointer-events-none mix-blend-screen" />
 
                 <div className="font-poppins items-center text-sm text-neutral-100 px-6 py-2 bg-neutral-700 uppercase tracking-tight font-medium rounded-md">
                     get back to study <MoveRight className="inline ml-2" />
@@ -37,6 +40,8 @@ export default function Hero() {
 
 
             </div>
+
         </>
     )
 }
+

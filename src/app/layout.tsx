@@ -33,6 +33,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body
         className={`${plusJakartaSans.variable} ${poppins.variable} ${inter.variable} antialiased`}
+        suppressHydrationWarning
       >
         {children}
       </body>

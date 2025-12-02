@@ -1,7 +1,7 @@
 export default function Footer() {
     return(
         <>
-        <div className="flex flex-col items-center justify-center px-24 py-8">
+        <div className="flex flex-col items-center justify-center px-24 py-32">
 
             <div className="font-poppins text-base text-neutral-400">
                 © 2025 VitB Notes. All rights reserved.

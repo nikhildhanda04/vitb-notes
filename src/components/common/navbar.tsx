@@ -41,7 +41,7 @@ export default function Navbar() {
 
     return (
         <>
-            <div className="flex flex-row items-center justify-between w-full px-24 py-8 z-50 bg-white/80 dark:bg-[#1c1c1b]/80 backdrop-blur-sm">
+            <div className="relative flex flex-row items-center justify-between w-full px-24 py-8 z-50 bg-white/80 dark:bg-[#1c1c1b]/80 backdrop-blur-sm">
 
                 <div className="flex flex-row items-center gap-20">
                     <a
