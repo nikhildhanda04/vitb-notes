@@ -28,30 +28,87 @@ Vitb Notes is an intelligent study companion designed to help students generate,
 
 ```
 vitb-notes/
-├── prisma/                 # Database schema and migrations
-├── public/                 # Static assets
-├── scripts/                # Utility scripts (e.g., database cleanup)
-├── src/
-│   ├── app/                # Next.js App Router pages and API routes
-│   │   ├── api/            # Backend API endpoints (generate, contact, auth)
-│   │   ├── generate/       # Note generation page
-│   │   ├── notes/          # Notes display and management
-│   │   └── page.tsx        # Landing page
-│   ├── components/
-│   │   ├── common/         # Shared components (Navbar, Footer)
-│   │   ├── generate/       # Components for note generation form
-│   │   ├── landing/        # Landing page sections (Hero, Features, Contact)
-│   │   ├── note/           # Note display components (Content, Quiz, TOC)
-│   │   └── ui/             # Shadcn UI reusable components
-│   ├── lib/                # Utility functions and configurations
-│   │   ├── auth.ts         # Authentication setup
-│   │   ├── gemini.ts       # AI generation logic
-│   │   └── parsing.ts      # File parsing logic
-│   └── types/              # TypeScript type definitions
-├── .env                    # Environment variables
-├── next.config.ts          # Next.js configuration
-├── package.json            # Project dependencies
-└── README.md               # Project documentation
+├── better-auth-collection.json
+├── components.json
+├── eslint.config.mjs
+├── next-env.d.ts
+├── next.config.ts
+├── package-lock.json
+├── package.json
+├── postcss.config.mjs
+├── prisma.config.ts
+├── tsconfig.json
+├── prisma/
+│   └── schema.prisma
+├── public/
+│   ├── file.svg
+│   ├── globe.svg
+│   ├── next.svg
+│   ├── vercel.svg
+│   └── window.svg
+├── scripts/
+│   ├── delete-all-notes.ts
+│   └── test-notes.ts
+└── src/
+    ├── app/
+    │   ├── api/
+    │   │   ├── auth/
+    │   │   ├── contact/
+    │   │   ├── generate/
+    │   │   └── notes/
+    │   ├── generate/
+    │   ├── notes/
+    │   ├── favicon.ico
+    │   ├── globals.css
+    │   ├── layout.tsx
+    │   └── page.tsx
+    ├── components/
+    │   ├── auth-dialog.tsx
+    │   ├── common/
+    │   │   ├── footer.tsx
+    │   │   └── navbar.tsx
+    │   ├── generate/
+    │   │   ├── auth-form.tsx
+    │   │   └── generate-form.tsx
+    │   ├── landing/
+    │   │   ├── contact.tsx
+    │   │   ├── faqs.tsx
+    │   │   ├── features.tsx
+    │   │   └── hero.tsx
+    │   ├── note/
+    │   │   ├── floating-settings.tsx
+    │   │   ├── floating-toc.tsx
+    │   │   ├── note-card.tsx
+    │   │   ├── note-content.tsx
+    │   │   ├── quiz.tsx
+    │   │   └── settings-box.tsx
+    │   └── ui/
+    │       ├── badge.tsx
+    │       ├── button.tsx
+    │       ├── card.tsx
+    │       ├── code-block.tsx
+    │       ├── dialog.tsx
+    │       ├── form.tsx
+    │       ├── input.tsx
+    │       ├── label.tsx
+    │       ├── mermaid-diagram.tsx
+    │       ├── popover.tsx
+    │       ├── progress.tsx
+    │       ├── select.tsx
+    │       ├── separator.tsx
+    │       ├── slider.tsx
+    │       ├── tabs.tsx
+    │       └── textarea.tsx
+    ├── generated/
+    │   └── prisma/
+    ├── lib/
+    │   ├── auth-client.ts
+    │   ├── auth.ts
+    │   ├── gemini.ts
+    │   ├── parsing.ts
+    │   └── utils.ts
+    └── types/
+        └── pdfjs-legacy.d.ts
 ```
 
 ## ⚡ Getting Started
