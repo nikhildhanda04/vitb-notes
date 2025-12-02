@@ -20,6 +20,11 @@
 # production
 /build
 
+/scripts*
+/scripts
+/scripts/delete-all-notes.ts
+/scripts/test-notes.ts
+
 # misc
 .DS_Store
 *.pem

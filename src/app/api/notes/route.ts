@@ -32,30 +32,20 @@ export async function POST(req: Request) {
         const subject = formData.get("subject") as string;
         const subjectCode = formData.get("subjectCode") as string | null;
 
-        if (!syllabus || !module || !semester || !year || !branch || !subject) {
-            return NextResponse.json({ error: "Missing required fields (syllabus is required)" }, { status: 400 });
+        const topics = formData.get("topics") as string;
+        const quiz = formData.get("quiz") as string;
+
+        if (!syllabus || !module || !semester || !year || !branch || !subject || !topics) {
+            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
-        let sourceText = "";
-
-        if (file) {
-            try {
-                sourceText = await parseFile(file);
-            } catch (error) {
-                console.error("Parsing error:", error);
-                return NextResponse.json({ error: "Failed to parse file" }, { status: 400 });
-            }
-        }
-
-        let generatedTopics;
+        let parsedTopics;
+        let parsedQuiz;
         try {
-            generatedTopics = await generateNotes(syllabus, sourceText);
-        } catch (error) {
-            console.error("AI Generation error:", error);
-            return NextResponse.json({
-                error: "Failed to generate notes with AI",
-                details: error instanceof Error ? error.message : String(error)
-            }, { status: 500 });
+            parsedTopics = JSON.parse(topics);
+            parsedQuiz = quiz ? JSON.parse(quiz) : [];
+        } catch (e) {
+            return NextResponse.json({ error: "Invalid JSON for topics or quiz" }, { status: 400 });
         }
 
         const note = await prisma.note.create({
@@ -69,15 +59,31 @@ export async function POST(req: Request) {
                 subjectCode,
                 userId: session.user.id,
                 topics: {
-                    create: generatedTopics.map((topic: any) => ({
+                    create: parsedTopics.map((topic: any) => ({
                         title: topic.title,
                         description: topic.description,
                         content: topic.content,
                     })),
                 },
+                quiz: parsedQuiz.length > 0 ? {
+                    create: {
+                        questions: {
+                            create: parsedQuiz.map((q: any) => ({
+                                question: q.question,
+                                options: q.options,
+                                answer: q.answer,
+                            })),
+                        },
+                    },
+                } : undefined,
             },
             include: {
                 topics: true,
+                quiz: {
+                    include: {
+                        questions: true
+                    }
+                }
             },
         });
 
@@ -105,37 +111,54 @@ export async function GET(req: Request) {
         if (branch) where.branch = branch;
         if (subject) where.subject = { contains: subject, mode: "insensitive" };
 
-        const notes = await prisma.note.findMany({
-            where,
-            select: {
-                id: true,
-                module: true,
-                semester: true,
-                year: true,
-                branch: true,
-                specialization: true,
-                subject: true,
-                subjectCode: true,
-                createdAt: true,
-                topics: {
-                    select: {
-                        id: true,
-                        title: true,
-                        description: true,
+        const page = parseInt(searchParams.get("page") || "1");
+        const limit = parseInt(searchParams.get("limit") || "10");
+        const skip = (page - 1) * limit;
+
+        const [notes, total] = await Promise.all([
+            prisma.note.findMany({
+                where,
+                skip,
+                take: limit,
+                select: {
+                    id: true,
+                    module: true,
+                    semester: true,
+                    year: true,
+                    branch: true,
+                    specialization: true,
+                    subject: true,
+                    subjectCode: true,
+                    createdAt: true,
+                    topics: {
+                        select: {
+                            id: true,
+                            title: true,
+                            description: true,
+                        },
+                    },
+                    user: {
+                        select: {
+                            name: true,
+                        },
                     },
                 },
-                user: {
-                    select: {
-                        name: true,
-                    },
+                orderBy: {
+                    createdAt: "desc",
                 },
-            },
-            orderBy: {
-                createdAt: "desc",
+            }),
+            prisma.note.count({ where }),
+        ]);
+
+        return NextResponse.json({
+            notes,
+            pagination: {
+                total,
+                pages: Math.ceil(total / limit),
+                page,
+                limit,
             },
         });
-
-        return NextResponse.json(notes);
     } catch (error) {
         console.error("Error fetching notes:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

@@ -22,8 +22,42 @@ export function GenerateForm({ user }: GenerateFormProps) {
     const [syllabus, setSyllabus] = useState("")
     const [file, setFile] = useState<File | null>(null)
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const [previewData, setPreviewData] = useState<any>(null)
+
+    const handleGenerate = async (e: React.FormEvent) => {
         e.preventDefault()
+        setLoading(true)
+        setMessage("")
+
+        const formData = new FormData()
+        formData.append("syllabus", syllabus)
+        if (file) {
+            formData.append("file", file)
+        }
+
+        try {
+            const res = await fetch("/api/generate", {
+                method: "POST",
+                body: formData,
+            })
+
+            if (!res.ok) {
+                const data = await res.json()
+                throw new Error(data.details ? `${data.error}: ${data.details}` : data.error || "Failed to generate preview")
+            }
+
+            const data = await res.json()
+            setPreviewData(data)
+            setMessage("Preview generated! Review below and click Upload to save.")
+        } catch (err: any) {
+            setMessage(err.message)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleUpload = async () => {
+        if (!previewData) return
         setLoading(true)
         setMessage("")
 
@@ -35,9 +69,12 @@ export function GenerateForm({ user }: GenerateFormProps) {
         if (specialization) formData.append("specialization", specialization)
         formData.append("subject", subject)
         if (subjectCode) formData.append("subjectCode", subjectCode)
-        formData.append("syllabus", syllabus)
-        if (file) {
-            formData.append("file", file)
+        formData.append("syllabus", syllabus) // Keep syllabus for record if needed, though not used for generation now
+
+        // Append generated content
+        formData.append("topics", JSON.stringify(previewData.topics))
+        if (previewData.quiz) {
+            formData.append("quiz", JSON.stringify(previewData.quiz))
         }
 
         try {
@@ -48,20 +85,94 @@ export function GenerateForm({ user }: GenerateFormProps) {
 
             if (!res.ok) {
                 const data = await res.json()
-                throw new Error(data.details ? `${data.error}: ${data.details}` : data.error || "Failed to generate notes")
+                throw new Error(data.details ? `${data.error}: ${data.details}` : data.error || "Failed to save notes")
             }
 
             const data = await res.json()
-            setMessage("Notes generated successfully!")
-            // Reset form or redirect
+            setMessage("Notes uploaded successfully!")
+            // Reset form
             setModule("")
             setSyllabus("")
             setFile(null)
+            setPreviewData(null)
         } catch (err: any) {
             setMessage(err.message)
         } finally {
             setLoading(false)
         }
+    }
+
+    if (previewData) {
+        return (
+            <div className="w-full max-w-4xl flex flex-col gap-8">
+                <div className="flex flex-col gap-2">
+                    <h1 className="font-inter text-4xl font-bold text-neutral-800">
+                        Preview Notes
+                    </h1>
+                    <p className="font-poppins text-neutral-500">
+                        Review the generated content before uploading.
+                    </p>
+                </div>
+
+                <div className="p-6 bg-white border border-neutral-200 rounded-lg shadow-sm max-h-[60vh] overflow-y-auto">
+                    <h2 className="text-2xl font-bold mb-4">Topics</h2>
+                    {previewData.topics.map((topic: any, i: number) => (
+                        <div key={i} className="mb-6">
+                            <h3 className="text-xl font-semibold mb-2">{topic.title}</h3>
+                            <p className="text-neutral-600 mb-2">{topic.description}</p>
+                            <div className="text-sm text-neutral-500 line-clamp-3">{topic.content}</div>
+                        </div>
+                    ))}
+
+                    {previewData.quiz && (
+                        <>
+                            <h2 className="text-2xl font-bold mb-4 mt-8">Quiz Preview</h2>
+                            <div className="grid gap-4">
+                                {previewData.quiz.map((q: any, i: number) => (
+                                    <div key={i} className="p-4 bg-neutral-50 rounded-lg">
+                                        <p className="font-medium mb-2">{i + 1}. {q.question}</p>
+                                        <ul className="list-disc list-inside text-sm text-neutral-600">
+                                            {q.options.map((opt: string, j: number) => (
+                                                <li key={j} className={opt === q.answer ? "text-green-600 font-medium" : ""}>
+                                                    {opt}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </div>
+
+                <div className="flex gap-4">
+                    <button
+                        onClick={() => setPreviewData(null)}
+                        className="flex-1 p-4 bg-white border border-neutral-300 text-neutral-700 font-inter font-bold text-lg rounded-lg hover:bg-neutral-50 transition-all"
+                    >
+                        Edit Details
+                    </button>
+                    <button
+                        onClick={handleUpload}
+                        disabled={loading}
+                        className="flex-1 p-4 bg-black text-white font-inter font-bold text-lg rounded-lg hover:bg-neutral-800 transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                    >
+                        {loading ? (
+                            <>
+                                <Loader2 className="animate-spin" /> Uploading...
+                            </>
+                        ) : (
+                            "Upload Notes"
+                        )}
+                    </button>
+                </div>
+                {message && (
+                    <div className={`p-4 rounded-lg text-center font-poppins ${message.includes("success") ? "bg-green-100 text-green-700 border border-green-200" : "bg-red-100 text-red-700 border border-red-200"}`}>
+                        {message}
+                    </div>
+                )}
+            </div>
+        )
     }
 
     return (
@@ -75,7 +186,7 @@ export function GenerateForm({ user }: GenerateFormProps) {
                 </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <form onSubmit={handleGenerate} className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Left Column: Metadata */}
                 <div className="flex flex-col gap-6 p-6 bg-neutral-50 rounded-lg border border-neutral-200">
                     <h2 className="font-inter text-xl font-bold flex items-center gap-2">
@@ -90,12 +201,7 @@ export function GenerateForm({ user }: GenerateFormProps) {
                             <input required type="text" value={module} onChange={e => setModule(e.target.value)} className="p-2 rounded border border-neutral-300 focus:border-black outline-none" placeholder="e.g. Module 1" />
                         </div>
 
-                        <div className="flex flex-col gap-1">
-                            <label className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
-                                <FileText className="w-4 h-4" /> Syllabus (Paste or Upload)
-                            </label>
-                            <textarea required value={syllabus} onChange={e => setSyllabus(e.target.value)} className="p-2 rounded border border-neutral-300 focus:border-black outline-none h-32" placeholder="Paste syllabus content here..." />
-                        </div>
+                        {/* Removed duplicate syllabus input from left column as it's in the right column */}
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col gap-1">
@@ -203,10 +309,10 @@ export function GenerateForm({ user }: GenerateFormProps) {
                     >
                         {loading ? (
                             <>
-                                <Loader2 className="animate-spin" /> Generating Notes...
+                                <Loader2 className="animate-spin" /> Generating Preview...
                             </>
                         ) : (
-                            "Generate Notes"
+                            "Generate Preview"
                         )}
                     </button>
                 </div>

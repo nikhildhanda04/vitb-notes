@@ -1,4 +1,4 @@
-import { CircleCheck } from "lucide-react"
+import { CircleCheck, SoapDispenserDroplet, Antenna } from "lucide-react"
 
 const features = [
     {
@@ -7,14 +7,14 @@ const features = [
         icon: <CircleCheck />
     },
     {
-        title: "Answers at Your Fingertips",
-        description: "Simplifies concepts for deeper and better understanding. We break down complex topics into digestible chunks.",
-        icon: <CircleCheck />
+        title: "Quizzes for Better Learning",
+        description: "AI generated quizzes to test your knowledge. Get instant feedback and improve your understanding.",
+        icon: <SoapDispenserDroplet />
     },
     {
-        title: "Fast and Efficient Learning",
-        description: "Simplifies concepts for deeper and better understanding. We break down complex topics into digestible chunks.",
-        icon: <CircleCheck />
+        title: "Probable Exam Questions",
+        description: "Uses past knowledge to generate probable exam questions. Get ready for exams with confidence.",
+        icon: <Antenna />
     }
 ]
 

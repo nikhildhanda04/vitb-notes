@@ -10,6 +10,7 @@ import { FloatingSettings } from "@/components/note/floating-settings"
 import { Badge } from "@/components/ui/badge"
 
 
+import { Quiz } from "@/components/note/quiz"
 
 interface Note {
     id: string
@@ -17,6 +18,7 @@ interface Note {
     semester: string
     year: string
     branch: string
+    specialization: string | null
     subject: string
     createdAt: string
     user: {
@@ -28,6 +30,14 @@ interface Note {
         description: string
         content: string
     }[]
+    quiz?: {
+        questions: {
+            id: string
+            question: string
+            options: string[]
+            answer: string
+        }[]
+    }
 }
 
 export default function NoteDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -117,60 +127,70 @@ export default function NoteDetailsPage({ params }: { params: Promise<{ id: stri
                     </Link>
 
                     {/* Header Card */}
-                    <div className="bg-white dark:bg-neutral-900 rounded-md shadow-[6px_6px_0px_0px_#737373]  hover:shadow-[9px_9px_0px_0px_#737373] transition-shadow duration-100 ease-in border border-zinc-200 dark:border-zinc-700 p-8 flex flex-col gap-6">
-                        <div className="flex flex-col  gap-4">
-                            <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
-                                {note.subject}
-                            </h1>
-                            <p className="text-lg text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                                {note.module}
-                            </p>
-                        </div>
+                    <div className="bg-white dark:bg-neutral-900 border border-zinc-200 dark:border-zinc-700 rounded-xl p-8 shadow-sm">
+                        <div className="flex flex-col gap-6">
+                            <div className="flex flex-wrap gap-2">
+                                <Badge variant="secondary" className="bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700">
+                                    {note.semester} Semester
+                                </Badge>
+                                <Badge variant="secondary" className="bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700">
+                                    Year {note.year}
+                                </Badge>
+                                <Badge variant="secondary" className="bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700">
+                                    {note.branch}
+                                </Badge>
+                                {note.specialization && (
+                                    <Badge variant="secondary" className="bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700">
+                                        {note.specialization}
+                                    </Badge>
+                                )}
+                            </div>
 
-                        <div className="flex flex-wrap gap-3">
-                            <Badge variant="secondary" className="shadow-[3px_3px_0px_0px_#737373] hover:shadow-[4px_4px_0px_0px_#737373] transition-shadow duration-100 ease-in rounded-md" icon={<GraduationCap className="w-3.5 h-3.5" />}>
-                                {note.branch}
-                            </Badge>
-                            <Badge variant="secondary" className="shadow-[3px_3px_0px_0px_#737373] hover:shadow-[4px_4px_0px_0px_#737373] transition-shadow duration-100 ease-in rounded-md" icon={<BookOpen className="w-3.5 h-3.5" />}>
-                                Semester {note.semester}
-                            </Badge>
-                            <Badge variant="secondary" className="shadow-[3px_3px_0px_0px_#737373] hover:shadow-[4px_4px_0px_0px_#737373] transition-shadow duration-100 ease-in rounded-md" icon={<Calendar className="w-3.5 h-3.5" />}>
-                                Year {note.year}
-                            </Badge>
-                            <Badge variant="secondary" className="shadow-[3px_3px_0px_0px_#737373] hover:shadow-[4px_4px_0px_0px_#737373] transition-shadow duration-100 ease-in rounded-md">
-                                Notes
-                            </Badge>
-                            <Badge variant="secondary" className="shadow-[3px_3px_0px_0px_#737373] hover:shadow-[4px_4px_0px_0px_#737373] transition-shadow duration-100 ease-in rounded-md">
-                                {note.topics.length} Topics
-                            </Badge>
+                            <div className="space-y-2">
+                                <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight font-inter">
+                                    {note.subject}
+                                </h1>
+                                <p className="text-lg text-zinc-500 dark:text-zinc-400 font-poppins">
+                                    {note.module}
+                                </p>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Topics */}
-                    <div className="flex flex-col gap-12">
+                    {/* Content */}
+                    <div className="space-y-8">
                         {note.topics.map((topic, index) => (
-                            <div key={topic.id} id={topic.id} className="flex flex-col gap-4 scroll-mt-32">
-                                <div className="flex items-baseline gap-4">
-                                    <span className="font-inter font-bold text-2xl text-zinc-300 dark:text-zinc-600">
-                                        {(index + 1).toString().padStart(2, '0')}
+                            <div key={topic.id} id={topic.id} className="scroll-mt-24">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-mono text-sm font-bold border border-zinc-200 dark:border-zinc-700">
+                                        {index + 1}
                                     </span>
-                                    <h2 className="font-inter font-bold text-2xl text-zinc-900 dark:text-zinc-100">
+                                    <h2 className="text-2xl font-bold text-zinc-800 dark:text-zinc-100 font-inter">
                                         {topic.title}
                                     </h2>
                                 </div>
-
-                                <p className="font-poppins text-zinc-500 dark:text-zinc-400 italic border-l-4 border-zinc-200 dark:border-zinc-700 pl-4">
-                                    {topic.description}
-                                </p>
-
-                                <NoteContent
-                                    content={topic.content}
-                                    font={font}
-                                    fontSize={fontSize}
-                                />
+                                <div className="bg-white dark:bg-neutral-900 border border-zinc-200 dark:border-zinc-700 rounded-xl p-8 shadow-sm">
+                                    <div className="prose prose-zinc dark:prose-invert max-w-none">
+                                        <p className="text-zinc-600 dark:text-zinc-400 mb-6 font-poppins italic border-l-4 border-zinc-200 dark:border-zinc-700 pl-4">
+                                            {topic.description}
+                                        </p>
+                                        <NoteContent
+                                            content={topic.content}
+                                            font={font}
+                                            fontSize={fontSize}
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         ))}
                     </div>
+
+                    {/* Quiz Section */}
+                    {note.quiz && note.quiz.questions.length > 0 && (
+                        <div className="pt-8 border-t border-zinc-200 dark:border-zinc-800">
+                            <Quiz questions={note.quiz.questions} />
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

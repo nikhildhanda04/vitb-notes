@@ -40,7 +40,6 @@ export function NoteContent({ content, font, fontSize }: NoteContentProps) {
                             return <MermaidDiagram chart={String(children).replace(/\n$/, "")} />
                         }
 
-                        // If it's a code block (has language or is multiline), use CodeBlock
                         if (match) {
                             return (
                                 <CodeBlock

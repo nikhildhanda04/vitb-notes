@@ -19,6 +19,11 @@ export async function GET(
                         name: true,
                     },
                 },
+                quiz: {
+                    include: {
+                        questions: true,
+                    },
+                },
             },
         });
 

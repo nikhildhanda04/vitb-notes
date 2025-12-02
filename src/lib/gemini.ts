@@ -35,14 +35,29 @@ export async function generateNotes(syllabus: string, sourceText: string) {
     **Source Material:**
     ${sourceText ? sourceText.slice(0, 50000) : "No source material provided. Use your general knowledge to generate notes based on the syllabus."}
 
-    **Output Format (JSON Array):**
-    [
-      {
-        "title": "Topic Title (from Syllabus)",
-        "description": "Brief summary",
-        "content": "# Heading\\n\\nDetailed explanation...\\n\\n$$ Formula $$"
-      }
-    ]
+    **Output Format (JSON Object):**
+    {
+      "topics": [
+        {
+          "title": "Topic Title (from Syllabus)",
+          "description": "Brief summary",
+          "content": "# Heading\\n\\nDetailed explanation...\\n\\n$$ Formula $$"
+        }
+      ],
+      "quiz": [
+        {
+          "question": "Question text?",
+          "options": ["Option A", "Option B", "Option C", "Option D"],
+          "answer": "Option A"
+        }
+      ]
+    }
+
+    **Instructions for Quiz:**
+    1. Generate 5-10 multiple-choice questions based on the generated notes.
+    2. Ensure the questions cover key concepts from the syllabus.
+    3. Provide 4 options for each question.
+    4. Specify the correct answer text exactly as it appears in the options.
   `;
 
   const maxRetries = 3;

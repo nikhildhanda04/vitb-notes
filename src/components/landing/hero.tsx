@@ -26,12 +26,12 @@ export default function Hero() {
 
                 {/* CTA */}
                 <div className="flex flex-row gap-6 ">
-                    <div className="px-8 py-2 bg-black items-center  flex gap-3 text-white border-neutral-400 border shadow-[6px_6px_0px_0px_#737373] hover:shadow-[8px_8px_0px_0px_#737373] transition-shadow duration-100 ease-in rounded-md ">
+                    <a href="/notes" className="px-8 py-2 bg-black items-center  flex gap-3 text-white border-neutral-400 border shadow-[6px_6px_0px_0px_#737373] hover:shadow-[8px_8px_0px_0px_#737373] transition-shadow duration-100 ease-in rounded-md ">
                         Notes <NotebookPen size="20" />
-                    </div>
-                    <div className="px-8 py-2 bg-neutral-100 dark:bg-neutral-800 dark:text-white items-center flex flex-row gap-3 border-neutral-400 border shadow-[6px_6px_0px_0px_#737373] hover:shadow-[8px_8px_0px_0px_#737373] transition-shadow duration-100 ease-in rounded-md">
+                    </a>
+                    <a href="https://github.com/nikhildhanda04/vitb-notes" target="_black" className="px-8 py-2 bg-neutral-100 dark:bg-neutral-800 dark:text-white items-center flex flex-row gap-3 border-neutral-400 border shadow-[6px_6px_0px_0px_#737373] hover:shadow-[8px_8px_0px_0px_#737373] transition-shadow duration-100 ease-in rounded-md">
                         Contribute to Project <Github size="20" />
-                    </div>
+                    </a>
                 </div>
 
 

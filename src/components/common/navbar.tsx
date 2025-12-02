@@ -51,9 +51,9 @@ export default function Navbar() {
                     </a>
 
                     <div className="flex flex-row text-neutral-600 dark:text-neutral-300 items-center gap-8">
-                        <Link href="/">About</Link>
-                        <Link href="/notes">Notes</Link>
-                        <Link href="/contact">Testimonials</Link>
+                        {/* <Link href="/">About</Link> */}
+                        {/* <Link href="/notes">Notes</Link> */}
+                        {/* <Link href="/contact">Testimonials</Link> */}
                     </div>
                 </div>
 
