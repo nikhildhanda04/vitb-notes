@@ -67,7 +67,7 @@ vitb-notes/
 1.  **Clone the repository:**
 
     ```bash
-    git clone https://github.com/yourusername/vitb-notes.git
+    git clone https://github.com/nikhildhanda04/vitb-notes.git
     cd vitb-notes
     ```
 
