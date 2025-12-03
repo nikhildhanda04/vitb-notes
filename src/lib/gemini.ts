@@ -1,21 +1,53 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType, Schema } from "@google/generative-ai";
+import { jsonrepair } from "jsonrepair";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+
+const schema: Schema = {
+  description: "Study notes and quiz schema",
+  type: SchemaType.OBJECT,
+  properties: {
+    topics: {
+      type: SchemaType.ARRAY,
+      items: {
+        type: SchemaType.OBJECT,
+        properties: {
+          title: { type: SchemaType.STRING, description: "Topic title from syllabus" },
+          description: { type: SchemaType.STRING, description: "Brief summary of the topic" },
+          content: { type: SchemaType.STRING, description: "Detailed markdown content including headings, bullet points, formulas, and mermaid diagrams" }
+        },
+        required: ["title", "description", "content"]
+      }
+    },
+    quiz: {
+      type: SchemaType.ARRAY,
+      items: {
+        type: SchemaType.OBJECT,
+        properties: {
+          question: { type: SchemaType.STRING },
+          options: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+          answer: { type: SchemaType.STRING }
+        },
+        required: ["question", "options", "answer"]
+      }
+    }
+  },
+  required: ["topics", "quiz"]
+};
 
 export async function generateNotes(syllabus: string, sourceText: string) {
   const model = genAI.getGenerativeModel({
     model: "gemini-2.0-flash",
     generationConfig: {
       responseMimeType: "application/json",
+      responseSchema: schema,
       maxOutputTokens: 80000,
-      temperature: 0.1, // Add this for more consistent JSON output
+      temperature: 0.1,
     },
   });
 
   const prompt = `
-    You are an expert educational assistant. Generate detailed study notes as a valid JSON object.
-
-    CRITICAL: Your response must be ONLY a valid JSON object. No explanations, no markdown, no extra text.
+    You are an expert educational assistant. Generate detailed study notes based on the provided Syllabus and Source Material.
 
     **Instructions:**
     1.  **Structure**: Follow the topics in the Syllabus exactly.
@@ -24,7 +56,7 @@ export async function generateNotes(syllabus: string, sourceText: string) {
     4.  **Verbosity**: Explain every concept thoroughly with multiple paragraphs.
     5.  **Examples**: Include real-world examples and analogies.
     6.  **Gap Filling**: Use general knowledge if source material is incomplete.
-    7.  **Format**: Content MUST use Markdown with:
+    7.  **Format**: Content field MUST use Markdown with:
         *   Clear headings (# ## ###)
         *   Bullet points
         *   LaTeX formulas: Use double backslashes for LaTeX commands (e.g., \\frac, \\sum)
@@ -35,7 +67,6 @@ export async function generateNotes(syllabus: string, sourceText: string) {
             A["Start"] --> B{"Is Valid?"};
             B -- Yes --> C["Continue"];
             \`\`\`
-    8.  **Escaping**: In JSON strings, escape backslashes (\\\\), quotes (\\\"), and newlines (\\n)
 
     **Syllabus:**
     ${syllabus}
@@ -43,27 +74,7 @@ export async function generateNotes(syllabus: string, sourceText: string) {
     **Source Material:**
     ${sourceText ? sourceText.slice(0, 50000) : "No source material provided."}
 
-    **Required JSON Structure:**
-    {
-      "topics": [
-        {
-          "title": "Topic Title from Syllabus",
-          "description": "Brief summary (1-2 sentences)",
-          "content": "# Main Heading\\n\\nDetailed markdown content...\\n\\n## Subsection\\n\\nMore content..."
-        }
-      ],
-      "quiz": [
-        {
-          "question": "Question text?",
-          "options": ["Option A", "Option B", "Option C", "Option D"],
-          "answer": "Option A"
-        }
-      ]
-    }
-
     Generate 5-10 quiz questions covering key syllabus concepts with 4 options each.
-    
-    Remember: Output ONLY the JSON object. Start with { and end with }. No other text.
   `;
 
   const maxRetries = 3;
@@ -76,46 +87,41 @@ export async function generateNotes(syllabus: string, sourceText: string) {
       const textResponse = response.text();
 
       try {
-        // Clean the response
-        let cleanedResponse = textResponse.trim();
-
-        // Remove markdown code blocks if present
-        cleanedResponse = cleanedResponse.replace(/```json\s*/g, '').replace(/```\s*$/g, '');
-
-        // Extract JSON using a more precise regex (non-greedy, balanced braces)
-        const jsonMatch = cleanedResponse.match(/\{(?:[^{}]|\{[^{}]*\})*\}/);
-
-        if (!jsonMatch) {
-          console.error("No JSON found. Full response:", textResponse);
-          throw new Error("No JSON object found in response");
-        }
-
-        const parsedData = JSON.parse(jsonMatch[0]);
+        // With responseSchema, the output is guaranteed to be valid JSON structure
+        // Use jsonrepair to fix common JSON issues (unescaped quotes, control chars, etc.)
+        const parsedData = JSON.parse(jsonrepair(textResponse));
 
         // Validate structure
         if (!parsedData.topics || !Array.isArray(parsedData.topics)) {
           throw new Error("Invalid response structure: missing 'topics' array");
         }
 
-        if (!parsedData.quiz || !Array.isArray(parsedData.quiz)) {
+        // Filter out invalid quiz questions to prevent DB errors
+        if (parsedData.quiz && Array.isArray(parsedData.quiz)) {
+          parsedData.quiz = parsedData.quiz.filter((q: any) =>
+            q.question &&
+            typeof q.question === 'string' &&
+            Array.isArray(q.options) &&
+            q.options.length > 0 &&
+            q.answer &&
+            typeof q.answer === 'string'
+          );
+        } else {
           console.warn("Warning: missing 'quiz' array in response");
           parsedData.quiz = []; // Provide default empty array
         }
 
-        console.log(`Successfully generated ${parsedData.topics.length} topics and ${parsedData.quiz.length} quiz questions`);
+        console.log(`Successfully generated ${parsedData.topics?.length || 0} topics and ${parsedData.quiz?.length || 0} quiz questions`);
         return parsedData;
 
       } catch (parseError: any) {
         console.error("=== PARSE ERROR ===");
         console.error("Error:", parseError.message);
         console.error("First 500 chars:", textResponse.slice(0, 500));
-        console.error("Last 500 chars:", textResponse.slice(-500));
-        console.error("Total length:", textResponse.length);
 
         throw new Error(
           `Failed to parse AI response: ${parseError.message}. ` +
-          `Response length: ${textResponse.length} chars. ` +
-          `Preview: ${textResponse.slice(0, 200)}...`
+          `Response length: ${textResponse.length} chars.`
         );
       }
     } catch (error: any) {
