@@ -20,8 +20,40 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Vitb Notes",
-  description: "Your notes, your way",
+  title: {
+    default: "Vitb Notes - AI Powered Note Generation",
+    template: "%s | Vitb Notes",
+  },
+  description: "Access comprehensive study notes from your syllabus and course materials using AI. Tailored for VIT Bhopal students.",
+  keywords: ["VIT Bhopal", "Notes", "AI Notes", "Study Material", "Engineering", "Syllabus", "Exam Prep"],
+  authors: [{ name: "Nikhil Dhanda" }],
+  creator: "Nikhil Dhanda",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://vitb-notes.vercel.app"),
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "/",
+    title: "Vitb Notes - AI Powered Note Generation",
+    description: "Generate comprehensive study notes from your syllabus and course materials using AI.",
+    siteName: "Vitb Notes",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Vitb Notes - AI Powered Note Generation",
+    description: "Generate comprehensive study notes from your syllabus and course materials using AI.",
+    creator: "@nikhildhanda",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 export default function RootLayout({

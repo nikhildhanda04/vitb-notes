@@ -1,58 +1,23 @@
 'use client'
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
 import { Loader2 } from "lucide-react"
 
-interface AuthFormProps {
-    isLogin: boolean
-    toggleAuth: () => void
-}
-
-export function AuthForm({ isLogin, toggleAuth }: AuthFormProps) {
-    const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("")
-    const [name, setName] = useState("")
+export function AuthForm({ isLogin, toggleAuth }: { isLogin: boolean; toggleAuth: () => void }) {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState("")
-    const router = useRouter()
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
+    const handleGoogleLogin = async () => {
         setLoading(true)
         setError("")
-
         try {
-            if (isLogin) {
-                await authClient.signIn.email({
-                    email,
-                    password,
-                }, {
-                    onSuccess: () => {
-                        router.refresh()
-                    },
-                    onError: (ctx) => {
-                        setError(ctx.error.message)
-                    }
-                })
-            } else {
-                await authClient.signUp.email({
-                    email,
-                    password,
-                    name,
-                }, {
-                    onSuccess: () => {
-                        router.refresh()
-                    },
-                    onError: (ctx) => {
-                        setError(ctx.error.message)
-                    }
-                })
-            }
-        } catch (err) {
-            setError("An unexpected error occurred")
-        } finally {
+            await authClient.signIn.social({
+                provider: "google",
+                callbackURL: "/"
+            })
+        } catch (err: any) {
+            setError(err.message || "Failed to login with Google")
             setLoading(false)
         }
     }
@@ -61,50 +26,16 @@ export function AuthForm({ isLogin, toggleAuth }: AuthFormProps) {
         <div className="w-full max-w-md flex flex-col gap-6 p-8 bg-neutral-100 rounded-lg border-r-6 border-b-6 border-neutral-600">
             <div className="flex flex-col gap-2 text-center">
                 <h1 className="font-inter text-3xl font-bold text-neutral-800">
-                    {isLogin ? "Welcome Back" : "Create Account"}
+                    {isLogin ? "Welcome Back" : "Create an Account"}
                 </h1>
                 <p className="font-poppins text-neutral-500 text-sm">
-                    {isLogin ? "Enter your credentials to access your notes" : "Sign up to start generating AI notes"}
+                    {isLogin
+                        ? "Sign in to access your notes and generate new ones"
+                        : "Sign up to start generating smart notes"}
                 </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                {!isLogin && (
-                    <div className="flex flex-col gap-1">
-                        <label className="font-inter text-sm font-semibold text-neutral-700">Name</label>
-                        <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            className="p-3 rounded-md border-2 border-neutral-300 focus:border-neutral-800 outline-none font-poppins transition-colors"
-                            placeholder="John Doe"
-                            required
-                        />
-                    </div>
-                )}
-                <div className="flex flex-col gap-1">
-                    <label className="font-inter text-sm font-semibold text-neutral-700">Email</label>
-                    <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="p-3 rounded-md border-2 border-neutral-300 focus:border-neutral-800 outline-none font-poppins transition-colors"
-                        placeholder="john@example.com"
-                        required
-                    />
-                </div>
-                <div className="flex flex-col gap-1">
-                    <label className="font-inter text-sm font-semibold text-neutral-700">Password</label>
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="p-3 rounded-md border-2 border-neutral-300 focus:border-neutral-800 outline-none font-poppins transition-colors"
-                        placeholder="••••••••"
-                        required
-                    />
-                </div>
-
+            <div className="flex flex-col gap-4">
                 {error && (
                     <div className="text-red-500 text-sm font-poppins text-center bg-red-100 p-2 rounded border border-red-200">
                         {error}
@@ -112,19 +43,30 @@ export function AuthForm({ isLogin, toggleAuth }: AuthFormProps) {
                 )}
 
                 <button
-                    type="submit"
+                    type="button"
                     disabled={loading}
-                    className="mt-2 p-3 bg-black text-white font-inter font-bold rounded-md hover:bg-neutral-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
+                    onClick={handleGoogleLogin}
+                    className="p-3 bg-white text-black border border-neutral-300 font-inter font-bold rounded-md hover:bg-neutral-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                 >
-                    {loading ? <Loader2 className="animate-spin w-5 h-5" /> : (isLogin ? "Sign In" : "Sign Up")}
+                    {loading ? (
+                        <Loader2 className="animate-spin w-5 h-5" />
+                    ) : (
+                        <svg className="w-5 h-5" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
+                            <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
+                        </svg>
+                    )}
+                    {isLogin ? "Continue with Google" : "Sign up with Google"}
                 </button>
-            </form>
 
-            <div className="text-center font-poppins text-sm text-neutral-500">
-                {isLogin ? "Don't have an account? " : "Already have an account? "}
-                <button onClick={toggleAuth} className="text-black font-semibold hover:underline">
-                    {isLogin ? "Sign Up" : "Sign In"}
-                </button>
+                <div className="text-center text-sm font-poppins text-neutral-500">
+                    {isLogin ? "Don't have an account? " : "Already have an account? "}
+                    <button
+                        onClick={toggleAuth}
+                        className="text-neutral-900 font-semibold hover:underline"
+                    >
+                        {isLogin ? "Sign up" : "Sign in"}
+                    </button>
+                </div>
             </div>
         </div>
     )

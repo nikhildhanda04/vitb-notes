@@ -17,21 +17,33 @@ export async function generateNotes(syllabus: string, sourceText: string) {
     **Instructions:**
     1.  **Structure**: Strictly follow the topics listed in the **Syllabus**. Do not invent new topics outside the syllabus.
     2.  **Content**: For each topic in the syllabus, extract relevant information, explanations, examples, and formulas from the **Source Material**.
-    3.  **Detail**: Provide comprehensive notes. If the source material lacks details for a specific syllabus topic, use your general knowledge to fill in the gaps, but prioritize the source material.
-    4.  **Format**: The content for each topic MUST be in Markdown. Include:
+    3.  **Detail**: Provide **extensive, in-depth, and textbook-quality** notes. **Do not summarize.** The goal is to create a complete study resource that covers every nuance of the syllabus.
+    4.  **Verbosity**: Explain every concept in depth. Use multiple paragraphs for complex topics. Avoid brevity.
+    5.  **Examples**: Include real-world examples and analogies for every major concept to aid understanding.
+    6.  **Gap Filling**: If the source material lacks details for a specific syllabus topic, use your general knowledge to fill in the gaps extensively, but prioritize the source material where available.
+    7.  **Format**: The content for each topic MUST be in Markdown. Include:
         *   Clear headings
         *   Bullet points for readability
         *   Formulas using LaTeX syntax (e.g., $E=mc^2$)
         *   Code snippets where applicable
         *   **Diagrams**: Use Mermaid.js syntax for diagrams. Wrap them in a code block with the language \`mermaid\`.
-            IMPORTANT: Always quote node labels, especially if they contain special characters or spaces.
+            IMPORTANT:
+            - Always quote node labels: \`id["Label Text"]\`
+            - **Strictly match brackets for shapes**:
+              - Rectangle: \`id["Label"]\` or \`id["Label"]\`
+              - Rounded: \`id("Label")\`
+              - Diamond: \`id{"Label"}\`
+              - Circle: \`id(("Label"))\`
+            - **NEVER mix brackets** (e.g., \`id{"Label"]\` is INVALID).
             Example:
             \`\`\`mermaid
             graph TD;
-            A["Start"] --> B["Process with & special chars"];
+            A["Start"] --> B{"Is Valid?"};
+            B -- Yes --> C["Continue"];
+            B -- No --> D["Stop"];
             \`\`\`
             Provide a diagram whenever it helps explain a concept (e.g., flowcharts, system architectures, sequences).
-    5.  **Output**: Return the result strictly as a valid JSON array of objects. Ensure all strings are properly escaped, especially backslashes in LaTeX formulas and code snippets. Do not include any markdown formatting outside the JSON array.
+    8.  **Output**: Return the result strictly as a valid JSON array of objects. Ensure all strings are properly escaped, especially backslashes in LaTeX formulas and code snippets. Do not include any markdown formatting outside the JSON array.
 
     **Syllabus:**
     ${syllabus}

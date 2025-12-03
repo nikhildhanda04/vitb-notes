@@ -23,7 +23,7 @@ export default function GeneratePage() {
     }
 
     return (
-        <div className="min-h-screen bg-white flex flex-col">
+        <div className="min-h-screen dark:bg-black bg-white flex flex-col">
             <Navbar />
             <div className="flex-1 mt-20 flex flex-col items-center justify-center p-8">
                 {!session ? (

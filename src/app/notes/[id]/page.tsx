@@ -2,12 +2,15 @@
 
 import { useEffect, useState, use } from "react"
 import Navbar from "@/components/common/navbar"
-import { Loader2, ArrowLeft, Calendar, GraduationCap, BookOpen } from "lucide-react"
+import { Loader2, ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { NoteContent } from "@/components/note/note-content"
 import { FloatingTOC } from "@/components/note/floating-toc"
 import { FloatingSettings } from "@/components/note/floating-settings"
 import { Badge } from "@/components/ui/badge"
+import { AuthDialog } from "@/components/auth-dialog"
+import { Button } from "@/components/ui/button"
 
 
 import { Quiz } from "@/components/note/quiz"
@@ -42,8 +45,10 @@ interface Note {
 
 export default function NoteDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params)
+    const router = useRouter()
     const [note, setNote] = useState<Note | null>(null)
     const [loading, setLoading] = useState(true)
+    const [isUnauthorized, setIsUnauthorized] = useState(false)
     const [font, setFont] = useState<"inter" | "poppins" | "serif">("inter")
     const [fontSize, setFontSize] = useState(16)
     const [currentHeading, setCurrentHeading] = useState("")
@@ -52,6 +57,11 @@ export default function NoteDetailsPage({ params }: { params: Promise<{ id: stri
         const fetchNote = async () => {
             try {
                 const res = await fetch(`/api/notes/${id}`)
+                if (res.status === 401) {
+                    setIsUnauthorized(true)
+                    setLoading(false)
+                    return
+                }
                 if (res.ok) {
                     const data = await res.json()
                     setNote(data)
@@ -88,6 +98,21 @@ export default function NoteDetailsPage({ params }: { params: Promise<{ id: stri
                 <Navbar />
                 <div className="flex-1 flex items-center justify-center">
                     <Loader2 className="animate-spin w-10 h-10 text-neutral-400" />
+                </div>
+            </div>
+        )
+    }
+
+    if (isUnauthorized) {
+        return (
+            <div className="min-h-screen bg-white flex flex-col">
+                <Navbar />
+                <div className="flex-1 flex items-center justify-center">
+                    <AuthDialog open={true} onOpenChange={(open) => {
+                        if (!open) {
+                            router.push("/notes")
+                        }
+                    }} />
                 </div>
             </div>
         )
