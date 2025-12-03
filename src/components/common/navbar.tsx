@@ -41,12 +41,12 @@ export default function Navbar() {
 
     return (
         <>
-            <div className="relative flex flex-row items-center justify-between w-full px-24 py-8 z-50 bg-white/80 dark:bg-[#1c1c1b]/80 backdrop-blur-sm">
+            <div className="relative flex flex-row items-center justify-between w-full px-6 md:px-24 py-8 z-50 bg-white/80 dark:bg-[#1c1c1b]/80 backdrop-blur-sm">
 
-                <div className="flex flex-row items-center gap-20">
+                <div className="flex flex-row items-center gap-4 md:gap-20">
                     <a
                         href="/"
-                        className="font-jakarta text-neutral-900 dark:text-neutral-50 text-3xl font-bold tracking-tighter">
+                        className="font-jakarta text-neutral-900 dark:text-neutral-50 text-2xl md:text-3xl font-bold tracking-tighter">
                         VitB Notes
                     </a>
 

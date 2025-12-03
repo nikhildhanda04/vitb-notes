@@ -53,7 +53,7 @@ export function AuthDialog({ children, open, onOpenChange }: AuthDialogProps) {
                 <DialogHeader>
                     <DialogTitle className="font-inter text-2xl font-bold text-center">Welcome to VitB Notes</DialogTitle>
                     <DialogDescription className="text-center">
-                        Sign in to generate and save your notes.
+                        Sign in to access notes.
                     </DialogDescription>
                 </DialogHeader>
 

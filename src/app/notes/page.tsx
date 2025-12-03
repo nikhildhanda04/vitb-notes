@@ -61,7 +61,7 @@ export default function NotesPage() {
         <div className="min-h-screen bg-white dark:bg-transparent flex flex-col">
             <Navbar />
 
-            <div className="flex-1 flex flex-col px-24 py-12 gap-12">
+            <div className="flex-1 flex flex-col px-6 md:px-24 py-12 gap-12">
                 <div className="flex flex-col gap-6 text-center items-center">
                     <h1 className="font-inter text-5xl font-bold text-neutral-800 dark:text-neutral-100">
                         Explore All Notes!

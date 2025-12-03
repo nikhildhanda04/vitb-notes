@@ -24,12 +24,12 @@ const faqData = [
 
 export default function FAQs() {
     return (
-        <div className="px-48 py-24 flex flex-col gap-12 items-center justify-center bg-white dark:bg-transparent">
+        <div className="px-6 md:px-48 py-24 flex flex-col gap-12 items-center justify-center bg-white dark:bg-transparent">
             <div className="flex flex-col gap-6 text-center">
                 <div className="font-inter text-5xl font-bold dark:text-neutral-100">
                     Frequently Asked Questions
                 </div>
-                <div className="font-poppins text-base px-48 text-neutral-400">
+                <div className="font-poppins text-base px-0 md:px-48 text-neutral-400">
                     Got questions? We've got answers. Here's everything you need to know about VitB Notes.
                 </div>
             </div>
