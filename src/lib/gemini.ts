@@ -7,7 +7,7 @@ export async function generateNotes(syllabus: string, sourceText: string) {
     model: "gemini-2.0-flash",
     generationConfig: {
       responseMimeType: "application/json",
-      maxOutputTokens: 8192,
+      maxOutputTokens: 80000,
       temperature: 0.1, // Add this for more consistent JSON output
     },
   });
