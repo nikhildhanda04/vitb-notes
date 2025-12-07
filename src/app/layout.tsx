@@ -22,7 +22,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Vitb Notes - AI Powered Note Generation",
+    default: "Vitb Notes - AI Powered Notes",
     template: "%s | Vitb Notes",
   },
   description: "Access comprehensive study notes from your syllabus and course materials using AI. Tailored for VIT Bhopal students.",
@@ -34,14 +34,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "/",
-    title: "Vitb Notes - AI Powered Note Generation",
-    description: "Generate comprehensive study notes from your syllabus and course materials using AI.",
+    title: "Vitb Notes - AI Powered Notes",
+    description: "Access comprehensive study notes from your syllabus and course materials using AI. Tailored for VIT Bhopal students.",
     siteName: "Vitb Notes",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Vitb Notes - AI Powered Note Generation",
-    description: "Generate comprehensive study notes from your syllabus and course materials using AI.",
+    title: "Vitb Notes - AI Powered Notes",
+    description: "Access comprehensive study notes from your syllabus and course materials using AI. Tailored for VIT Bhopal students.",
     creator: "@nikhildhanda",
   },
   robots: {
