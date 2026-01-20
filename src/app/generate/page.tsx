@@ -28,7 +28,7 @@ export default function GeneratePage() {
             <div className="flex-1 mt-20 flex flex-col items-center justify-center p-8">
                 {!session ? (
                     <AuthForm isLogin={isLogin} toggleAuth={() => setIsLogin(!isLogin)} />
-                ) : (session.user as any).role !== "admin" ? (
+                ) : (session.user as { role?: string }).role !== "admin" ? (
                     <div className="flex flex-col items-center gap-4 text-center">
                         <div className="p-4 bg-red-100 text-red-700 rounded-lg border border-red-200 font-poppins">
                             Access Denied. Only admins can generate notes.

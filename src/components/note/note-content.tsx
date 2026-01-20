@@ -24,7 +24,7 @@ export const NoteContent = React.memo(function NoteContent({ content, font, font
     }[font]
 
     const components = useMemo(() => ({
-        code({ className, children, ...props }: any) {
+        code({ className, children, ...props }: React.ComponentPropsWithoutRef<'code'> & { className?: string }) {
             const match = /language-(\w+)/.exec(className || "")
             const isMermaid = match && match[1] === "mermaid"
 
@@ -38,6 +38,7 @@ export const NoteContent = React.memo(function NoteContent({ content, font, font
                         language={match[1]}
                         value={String(children).replace(/\n$/, "")}
                         className={className}
+                        {...props}
                     />
                 )
             }
@@ -50,14 +51,14 @@ export const NoteContent = React.memo(function NoteContent({ content, font, font
             )
         },
         // Custom styling for other elements if needed
-        h1: ({ children }: any) => <h1 className="text-2xl font-bold mt-6 mb-4">{children}</h1>,
-        h2: ({ children }: any) => <h2 className="text-xl font-bold mt-5 mb-3">{children}</h2>,
-        h3: ({ children }: any) => <h3 className="text-lg font-bold mt-4 mb-2">{children}</h3>,
-        p: ({ children }: any) => <p className="mb-4 leading-relaxed">{children}</p>,
-        ul: ({ children }: any) => <ul className="list-disc pl-6 mb-4 space-y-1">{children}</ul>,
-        ol: ({ children }: any) => <ol className="list-decimal pl-6 mb-4 space-y-1">{children}</ol>,
-        blockquote: ({ children }: any) => (
-            <blockquote className="border-l-4 border-neutral-200 pl-4 italic text-neutral-600 my-4">
+        h1: ({ className, ...props }: React.ComponentPropsWithoutRef<'h1'>) => <h1 className={cn("text-2xl font-bold mt-6 mb-4", className)} {...props} />,
+        h2: ({ className, ...props }: React.ComponentPropsWithoutRef<'h2'>) => <h2 className={cn("text-xl font-bold mt-5 mb-3", className)} {...props} />,
+        h3: ({ className, ...props }: React.ComponentPropsWithoutRef<'h3'>) => <h3 className={cn("text-lg font-bold mt-4 mb-2", className)} {...props} />,
+        p: ({ className, ...props }: React.ComponentPropsWithoutRef<'p'>) => <p className={cn("mb-4 leading-relaxed", className)} {...props} />,
+        ul: ({ className, ...props }: React.ComponentPropsWithoutRef<'ul'>) => <ul className={cn("list-disc pl-6 mb-4 space-y-1", className)} {...props} />,
+        ol: ({ className, ...props }: React.ComponentPropsWithoutRef<'ol'>) => <ol className={cn("list-decimal pl-6 mb-4 space-y-1", className)} {...props} />,
+        blockquote: ({ className, children, ...props }: React.ComponentPropsWithoutRef<'blockquote'>) => (
+            <blockquote className={cn("border-l-4 border-neutral-200 pl-4 italic text-neutral-600 my-4", className)} {...props}>
                 {children}
             </blockquote>
         ),

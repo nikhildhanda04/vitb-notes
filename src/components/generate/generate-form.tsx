@@ -3,8 +3,25 @@
 import { useState } from "react"
 import { Loader2, BookOpen, Type, GraduationCap, Calendar, GitBranch, FileText, Upload } from "lucide-react"
 
+interface Topic {
+    title: string
+    description: string
+    content: string
+}
+
+interface QuizQuestion {
+    question: string
+    options: string[]
+    answer: string
+}
+
+interface PreviewData {
+    topics: Topic[]
+    quiz?: QuizQuestion[]
+}
+
 interface GenerateFormProps {
-    user: any
+    user: unknown // User prop seems unused in this component, typing as unknown
 }
 
 export function GenerateForm({ user }: GenerateFormProps) {
@@ -22,7 +39,7 @@ export function GenerateForm({ user }: GenerateFormProps) {
     const [syllabus, setSyllabus] = useState("")
     const [file, setFile] = useState<File | null>(null)
 
-    const [previewData, setPreviewData] = useState<any>(null)
+    const [previewData, setPreviewData] = useState<PreviewData | null>(null)
 
     const handleGenerate = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -49,8 +66,8 @@ export function GenerateForm({ user }: GenerateFormProps) {
             const data = await res.json()
             setPreviewData(data)
             setMessage("Preview generated! Review below and click Upload to save.")
-        } catch (err: any) {
-            setMessage(err.message)
+        } catch (err: unknown) {
+            setMessage(err instanceof Error ? err.message : "An error occurred")
         } finally {
             setLoading(false)
         }
@@ -95,8 +112,8 @@ export function GenerateForm({ user }: GenerateFormProps) {
             setSyllabus("")
             setFile(null)
             setPreviewData(null)
-        } catch (err: any) {
-            setMessage(err.message)
+        } catch (err: unknown) {
+            setMessage(err instanceof Error ? err.message : "An error occurred")
         } finally {
             setLoading(false)
         }
@@ -116,7 +133,7 @@ export function GenerateForm({ user }: GenerateFormProps) {
 
                 <div className="p-6 bg-white border border-neutral-200 rounded-lg shadow-sm max-h-[60vh] overflow-y-auto">
                     <h2 className="text-2xl font-bold mb-4">Topics</h2>
-                    {previewData.topics?.map((topic: any, i: number) => (
+                    {previewData.topics?.map((topic: Topic, i: number) => (
                         <div key={i} className="mb-6">
                             <h3 className="text-xl font-semibold mb-2">{topic.title}</h3>
                             <p className="text-neutral-600 mb-2">{topic.description}</p>
@@ -128,7 +145,7 @@ export function GenerateForm({ user }: GenerateFormProps) {
                         <>
                             <h2 className="text-2xl font-bold mb-4 mt-8">Quiz Preview</h2>
                             <div className="grid gap-4">
-                                {previewData.quiz.map((q: any, i: number) => (
+                                {previewData.quiz.map((q: QuizQuestion, i: number) => (
                                     <div key={i} className="p-4 bg-neutral-50 rounded-lg">
                                         <p className="font-medium mb-2">{i + 1}. {q.question}</p>
                                         <ul className="list-disc list-inside text-sm text-neutral-600">

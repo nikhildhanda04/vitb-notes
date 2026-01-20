@@ -36,8 +36,8 @@ export function AuthDialog({ children, open, onOpenChange }: AuthDialogProps) {
                 provider: "google",
                 callbackURL: "/"
             })
-        } catch (err: any) {
-            setError(err.message || "Failed to login with Google")
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Failed to login with Google")
             setIsLoading(false)
         }
     }

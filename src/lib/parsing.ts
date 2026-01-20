@@ -8,6 +8,8 @@ import path from 'path';
 if (typeof window === 'undefined') {
     // Use path.join to avoid Next.js/Webpack resolving the path to an internal placeholder
     pdfjs.GlobalWorkerOptions.workerSrc = path.join(process.cwd(), 'node_modules/pdfjs-dist/legacy/build/pdf.worker.js');
+    // Point to standard fonts in node_modules
+    pdfjs.GlobalWorkerOptions.standardFontDataUrl = path.join(process.cwd(), 'node_modules/pdfjs-dist/standard_fonts/');
 }
 
 type InputBuffer = Buffer | Uint8Array;
@@ -35,7 +37,7 @@ export async function parseBuffer(buffer: InputBuffer): Promise<string> {
             return text;
         }
         console.log("pdfjs-dist returned short text (likely scanned) — will run OCR fallback");
-    } catch (err) {
+    } catch (err: unknown) {
         console.warn("pdfjs-dist text extraction failed, will attempt OCR fallback:", err);
     }
 
@@ -52,7 +54,10 @@ async function extractTextFromBuffer(buffer: Uint8Array): Promise<string> {
         const page = await doc.getPage(i);
         const textContent = await page.getTextContent();
         const pageText = textContent.items
-            .map((item: any) => item.str || "")
+            .map((item: unknown) => {
+                const textItem = item as { str?: string };
+                return textItem.str || "";
+            })
             .join(" ");
         fullText += pageText + "\n\n";
     }
@@ -83,7 +88,7 @@ async function performOCR(buffer: InputBuffer): Promise<string> {
             const viewport = page.getViewport({ scale: 2.0 });
 
             // Use node-canvas
-            const { createCanvas } = require("canvas");
+            const { createCanvas } = await import("canvas");
             const canvas = createCanvas(viewport.width, viewport.height);
             const context = canvas.getContext("2d");
 

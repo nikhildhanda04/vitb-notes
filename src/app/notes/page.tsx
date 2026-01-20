@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import Navbar from "@/components/common/navbar"
 import { Loader2, Search } from "lucide-react"
 import { NoteCard } from "@/components/note/note-card"
+import { RecentNotes } from "@/components/note/recent-notes"
 
 interface Note {
     id: string
@@ -35,7 +36,7 @@ export default function NotesPage() {
         fetchNotes()
     }, [page])
 
-    const fetchNotes = async () => {
+    const fetchNotes = useCallback(async () => {
         setLoading(true)
         try {
             const res = await fetch(`/api/notes?page=${page}&limit=9`)
@@ -49,7 +50,7 @@ export default function NotesPage() {
         } finally {
             setLoading(false)
         }
-    }
+    }, [page])
 
     const filteredNotes = notes.filter(note =>
         note.subject.toLowerCase().includes(search.toLowerCase()) ||
@@ -88,6 +89,9 @@ export default function NotesPage() {
                     </div>
                 ) : (
                     <div className="flex flex-col gap-12">
+                        {/* Recent Notes Section */}
+                         {!search && <RecentNotes />}
+
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             {filteredNotes.map(note => (
                                 <NoteCard key={note.id} note={note} />

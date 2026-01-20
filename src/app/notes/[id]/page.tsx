@@ -10,7 +10,7 @@ import { FloatingTOC } from "@/components/note/floating-toc"
 import { FloatingSettings } from "@/components/note/floating-settings"
 import { Badge } from "@/components/ui/badge"
 import { AuthDialog } from "@/components/auth-dialog"
-import { Button } from "@/components/ui/button"
+
 
 
 import { Quiz } from "@/components/note/quiz"
@@ -65,15 +65,53 @@ export default function NoteDetailsPage({ params }: { params: Promise<{ id: stri
                 if (res.ok) {
                     const data = await res.json()
                     setNote(data)
+                    saveToRecent(data)
+                } else {
+                    throw new Error("Failed to fetch")
                 }
             } catch (error) {
-                console.error("Failed to fetch note", error)
+                console.error("Failed to fetch note, trying cache", error)
+                // Try to load from recent notes cache
+                try {
+                    const stored = localStorage.getItem("recent-notes")
+                    if (stored) {
+                        const parsed = JSON.parse(stored) as Note[]
+                        const cachedNote = parsed.find(n => n.id === id)
+                        if (cachedNote) {
+                            setNote(cachedNote)
+                        }
+                    }
+                } catch (cacheError) {
+                    console.error("Failed to load from cache", cacheError)
+                }
             } finally {
                 setLoading(false)
             }
         }
         fetchNote()
     }, [id])
+
+    const saveToRecent = (noteToSave: Note) => {
+        try {
+            const stored = localStorage.getItem("recent-notes")
+            let recents: Note[] = stored ? JSON.parse(stored) : []
+            
+            // Remove if already exists to move to top
+            recents = recents.filter(n => n.id !== noteToSave.id)
+            
+            // Add to beginning
+            recents.unshift(noteToSave)
+            
+            // Keep last 5
+            if (recents.length > 5) {
+                recents = recents.slice(0, 5)
+            }
+            
+            localStorage.setItem("recent-notes", JSON.stringify(recents))
+        } catch (e) {
+            console.error("Failed to save to recent notes", e)
+        }
+    }
 
     useEffect(() => {
         const handleScroll = () => {

@@ -16,8 +16,8 @@ export function AuthForm({ isLogin, toggleAuth }: { isLogin: boolean; toggleAuth
                 provider: "google",
                 callbackURL: "/"
             })
-        } catch (err: any) {
-            setError(err.message || "Failed to login with Google")
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Failed to login with Google")
             setLoading(false)
         }
     }

@@ -67,8 +67,8 @@ export function ContactForm() {
 
             setSuccess(true)
             form.reset()
-        } catch (err: any) {
-            setError(err.message)
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Something went wrong")
         } finally {
             setLoading(false)
         }
@@ -83,7 +83,7 @@ export function ContactForm() {
                             Get in Touch
                         </h2>
                         <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed font-poppins">
-                            Have a feature request, found a bug, or just want to say hi? We'd love to hear from you.
+                            Have a feature request, found a bug, or just want to say hi? We&apos;d love to hear from you.
                             Your feedback helps us improve Vitb Notes.
                         </p>
                     </div>
@@ -131,7 +131,7 @@ export function ContactForm() {
                                             />
                                         </FormControl>
                                         <FormDescription>
-                                            We'll get back to you as soon as possible.
+                                            We&apos;ll get back to you as soon as possible.
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>

@@ -1,11 +1,23 @@
 import { auth } from "@/lib/auth";
-import { PrismaClient } from "@/generated/prisma";
+import { PrismaClient, Prisma } from "@/generated/prisma";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { parseFile } from "@/lib/parsing";
 import { generateNotes } from "@/lib/gemini";
 
 const prisma = new PrismaClient();
+
+interface Topic {
+    title: string;
+    description: string;
+    content: string;
+}
+
+interface QuizQuestion {
+    question: string;
+    options: string[];
+    answer: string;
+}
 
 export async function POST(req: Request) {
     try {
@@ -39,8 +51,8 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
-        let parsedTopics;
-        let parsedQuiz;
+        let parsedTopics: Topic[];
+        let parsedQuiz: QuizQuestion[];
         try {
             parsedTopics = JSON.parse(topics);
             parsedQuiz = quiz ? JSON.parse(quiz) : [];
@@ -59,7 +71,7 @@ export async function POST(req: Request) {
                 subjectCode,
                 userId: session.user.id,
                 topics: {
-                    create: parsedTopics.map((topic: any) => ({
+                    create: parsedTopics.map((topic: Topic) => ({
                         title: topic.title,
                         description: topic.description,
                         content: topic.content,
@@ -68,7 +80,7 @@ export async function POST(req: Request) {
                 quiz: parsedQuiz.length > 0 ? {
                     create: {
                         questions: {
-                            create: parsedQuiz.map((q: any) => ({
+                            create: parsedQuiz.map((q: QuizQuestion) => ({
                                 question: q.question,
                                 options: q.options,
                                 answer: q.answer,
@@ -105,7 +117,7 @@ export async function GET(req: Request) {
         const branch = searchParams.get("branch");
         const subject = searchParams.get("subject");
 
-        const where: any = {};
+        const where: Prisma.NoteWhereInput = {};
         if (semester) where.semester = semester;
         if (year) where.year = year;
         if (branch) where.branch = branch;

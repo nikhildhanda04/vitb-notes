@@ -68,7 +68,7 @@ export function SettingsBox({
                     <label className="text-xs font-semibold text-neutral-500 flex items-center gap-2">
                         <Type className="w-3 h-3" /> Font Family
                     </label>
-                    <Select value={font} onValueChange={(value: any) => setFont(value)}>
+                    <Select value={font} onValueChange={(value: "inter" | "poppins" | "serif") => setFont(value)}>
                         <SelectTrigger className="w-full">
                             <SelectValue placeholder="Select Font" />
                         </SelectTrigger>
