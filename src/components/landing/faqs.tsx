@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from "react"
-import { ChevronDown, ChevronUp } from "lucide-react"
+import { ChevronDown } from "lucide-react"
 
 const faqData = [
     {
@@ -30,7 +30,7 @@ export default function FAQs() {
                     Frequently Asked Questions
                 </div>
                 <div className="font-poppins text-base px-0 md:px-48 text-neutral-400">
-                    Got questions? We've got answers. Here's everything you need to know about VitB Notes.
+                    Got questions? We&apos;ve got answers. Here&apos;s everything you need to know about VitB Notes.
                 </div>
             </div>
 

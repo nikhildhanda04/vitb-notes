@@ -85,6 +85,7 @@ export async function generateNotes(syllabus: string, sourceText: string) {
     3.  **Mathematical Content**:
         *   Use **LaTeX** for all formulas and symbols (e.g., $E=mc^2$, $\\sum_{i=0}^n$).
         *   **Step-by-Step Solutions**: For every quantitative concept, provide at least one detailed solved example. Break it down into clear steps (Step 1, Step 2, etc.).
+        *   **Examples and Solutions**: Provide atleast one example and step by step solution for every quntative concept. 
         *   **Formulas**: Clearly state formulas before applying them.
     4.  **Formatting**:
         *   Use extensive Markdown features: Bullet points, **Bold** for emphasis, *Italic* for definitions.

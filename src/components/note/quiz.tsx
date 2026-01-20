@@ -4,6 +4,11 @@ import { useState } from "react"
 import { CheckCircle, XCircle, RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+import ReactMarkdown from "react-markdown"
+import remarkMath from "remark-math"
+import rehypeKatex from "rehype-katex"
+import "katex/dist/katex.min.css"
+
 interface Question {
     id: string
     question: string
@@ -93,9 +98,18 @@ export function Quiz({ questions }: QuizProps) {
             </div>
 
             <div className="p-6 flex flex-col gap-6">
-                <p className="text-lg font-medium text-neutral-800 dark:text-neutral-200">
-                    {question.question}
-                </p>
+                <div className="text-lg font-medium text-neutral-800 dark:text-neutral-200 prose dark:prose-invert max-w-none">
+                    <ReactMarkdown
+                        remarkPlugins={[remarkMath]}
+                        rehypePlugins={[rehypeKatex]}
+                        components={{
+                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                            p: ({ node: _node, ...props }) => <span {...props} className="block mb-4 last:mb-0" />
+                        }}
+                    >
+                        {question.question}
+                    </ReactMarkdown>
+                </div>
 
                 <div className="grid gap-3">
                     {question.options.map((option, index) => {
@@ -121,14 +135,23 @@ export function Quiz({ questions }: QuizProps) {
                                     optionClass
                                 )}
                             >
-                                <span className="text-neutral-700 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-neutral-100 transition-colors">
-                                    {option}
+                                <span className="text-neutral-700 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-neutral-100 transition-colors w-full">
+                                    <ReactMarkdown
+                                        remarkPlugins={[remarkMath]}
+                                        rehypePlugins={[rehypeKatex]}
+                                        components={{
+                                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                                            p: ({ node: _node, ...props }) => <span {...props} />
+                                        }}
+                                    >
+                                        {option}
+                                    </ReactMarkdown>
                                 </span>
                                 {showResult && option === question.answer && (
-                                    <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                                    <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 shrink-0 ml-2" />
                                 )}
                                 {showResult && option === selectedOption && option !== question.answer && (
-                                    <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                                    <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 ml-2" />
                                 )}
                             </button>
                         )

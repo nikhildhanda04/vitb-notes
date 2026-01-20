@@ -32,10 +32,6 @@ export default function NotesPage() {
     const [page, setPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
 
-    useEffect(() => {
-        fetchNotes()
-    }, [page])
-
     const fetchNotes = useCallback(async () => {
         setLoading(true)
         try {
@@ -51,6 +47,10 @@ export default function NotesPage() {
             setLoading(false)
         }
     }, [page])
+
+    useEffect(() => {
+        fetchNotes()
+    }, [fetchNotes])
 
     const filteredNotes = notes.filter(note =>
         note.subject.toLowerCase().includes(search.toLowerCase()) ||
@@ -78,7 +78,7 @@ export default function NotesPage() {
                             placeholder="Search notes..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full pl-12 pr-4 py-3 rounded-md shadow-[6px_6px_0px_0px_#737373] hover:shadow-[8px_8px_0px_0px_#737373] active:shadow-[4px_4px_0px_0px_#737373] transition-shadow duration-100 ease-in border-2 border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 dark:text-neutral-100 focus:border-black dark:focus:border-white outline-none font-poppins transition-colors"
+                            className="w-full pl-12 pr-4 py-3 rounded-md shadow-[6px_6px_0px_0px_#737373] hover:shadow-[8px_8px_0px_0px_#737373] active:shadow-[4px_4px_0px_0px_#737373] transition-all duration-100 ease-in border-2 border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 dark:text-neutral-100 focus:border-black dark:focus:border-white outline-none font-poppins"
                         />
                     </div>
                 </div>
