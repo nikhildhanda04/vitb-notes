@@ -21,7 +21,7 @@ interface PreviewData {
 }
 
 interface GenerateFormProps {
-    user: unknown // User prop seems unused in this component, typing as unknown
+    user: unknown 
 }
 
 export function GenerateForm({ user }: GenerateFormProps) {
@@ -86,9 +86,8 @@ export function GenerateForm({ user }: GenerateFormProps) {
         if (specialization) formData.append("specialization", specialization)
         formData.append("subject", subject)
         if (subjectCode) formData.append("subjectCode", subjectCode)
-        formData.append("syllabus", syllabus) // Keep syllabus for record if needed, though not used for generation now
+        formData.append("syllabus", syllabus) 
 
-        // Append generated content
         formData.append("topics", JSON.stringify(previewData.topics))
         if (previewData.quiz) {
             formData.append("quiz", JSON.stringify(previewData.quiz))
@@ -132,12 +131,12 @@ export function GenerateForm({ user }: GenerateFormProps) {
                 </div>
 
                 <div className="p-6 bg-white border border-neutral-200 rounded-lg shadow-sm max-h-[60vh] overflow-y-auto">
-                    <h2 className="text-2xl font-bold mb-4">Topics</h2>
+                    <h2 className="text-2xl  text-neutral-800 font-bold mb-4">Topics</h2>
                     {previewData.topics?.map((topic: Topic, i: number) => (
                         <div key={i} className="mb-6">
-                            <h3 className="text-xl font-semibold mb-2">{topic.title}</h3>
-                            <p className="text-neutral-600 mb-2">{topic.description}</p>
-                            <div className="text-sm text-neutral-500 line-clamp-3">{topic.content}</div>
+                            <h3 className="text-xl text-neutral-800 font-semibold mb-2">{topic.title}</h3>
+                            <p className=" text-neutral-800 mb-2">{topic.description}</p>
+                            <div className="text-sm text-neutral-800 line-clamp-3">{topic.content}</div>
                         </div>
                     ))}
 
@@ -146,7 +145,7 @@ export function GenerateForm({ user }: GenerateFormProps) {
                             <h2 className="text-2xl font-bold mb-4 mt-8">Quiz Preview</h2>
                             <div className="grid gap-4">
                                 {previewData.quiz.map((q: QuizQuestion, i: number) => (
-                                    <div key={i} className="p-4 bg-neutral-50 rounded-lg">
+                                    <div key={i} className="p-4 bg-neutral-50 text-neutral-800 rounded-lg">
                                         <p className="font-medium mb-2">{i + 1}. {q.question}</p>
                                         <ul className="list-disc list-inside text-sm text-neutral-600">
                                             {q.options.map((opt: string, j: number) => (

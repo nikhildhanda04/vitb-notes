@@ -1,5 +1,5 @@
 
-import { createWorker } from "tesseract.js";
+import { createWorker, OEM } from "tesseract.js";
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf';
 
 import path from 'path';
@@ -77,7 +77,9 @@ async function performOCR(buffer: InputBuffer): Promise<string> {
     console.log(`OCR fallback: found ${doc.numPages} pages`);
 
     // Create tesseract worker
-    const worker = await createWorker("eng");
+    const worker = await createWorker("eng", OEM.LSTM_ONLY, {
+        workerPath: path.join(process.cwd(), "node_modules/tesseract.js/src/worker-script/node/index.js"),
+    });
     let fullText = "";
 
     try {

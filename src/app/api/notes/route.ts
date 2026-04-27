@@ -116,12 +116,24 @@ export async function GET(req: Request) {
         const year = searchParams.get("year");
         const branch = searchParams.get("branch");
         const subject = searchParams.get("subject");
+        const search = searchParams.get("search");
 
         const where: Prisma.NoteWhereInput = {};
         if (semester) where.semester = semester;
         if (year) where.year = year;
         if (branch) where.branch = branch;
         if (subject) where.subject = { contains: subject, mode: "insensitive" };
+
+        if (search) {
+            where.OR = [
+                { subject: { contains: search, mode: "insensitive" } },
+                { branch: { contains: search, mode: "insensitive" } },
+                { module: { contains: search, mode: "insensitive" } },
+                { subjectCode: { contains: search, mode: "insensitive" } },
+                { topics: { some: { title: { contains: search, mode: "insensitive" } } } },
+                { topics: { some: { description: { contains: search, mode: "insensitive" } } } },
+            ];
+        }
 
         const page = parseInt(searchParams.get("page") || "1");
         const limit = parseInt(searchParams.get("limit") || "10");

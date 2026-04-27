@@ -17,9 +17,10 @@ interface AuthDialogProps {
     children?: React.ReactNode
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    callbackURL?: string
 }
 
-export function AuthDialog({ children, open, onOpenChange }: AuthDialogProps) {
+export function AuthDialog({ children, open, onOpenChange, callbackURL }: AuthDialogProps) {
     const [internalOpen, setInternalOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState("")
@@ -34,7 +35,7 @@ export function AuthDialog({ children, open, onOpenChange }: AuthDialogProps) {
         try {
             await authClient.signIn.social({
                 provider: "google",
-                callbackURL: "/"
+                callbackURL: callbackURL || window.location.href
             })
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : "Failed to login with Google")

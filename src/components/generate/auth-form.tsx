@@ -14,7 +14,7 @@ export function AuthForm({ isLogin, toggleAuth }: { isLogin: boolean; toggleAuth
         try {
             await authClient.signIn.social({
                 provider: "google",
-                callbackURL: "/"
+                callbackURL: window.location.href
             })
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : "Failed to login with Google")

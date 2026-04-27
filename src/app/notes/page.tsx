@@ -32,10 +32,10 @@ export default function NotesPage() {
     const [page, setPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
 
-    const fetchNotes = useCallback(async () => {
+    const fetchNotes = useCallback(async (currentSearch: string, currentPage: number) => {
         setLoading(true)
         try {
-            const res = await fetch(`/api/notes?page=${page}&limit=9`)
+            const res = await fetch(`/api/notes?page=${currentPage}&limit=9${currentSearch ? `&search=${encodeURIComponent(currentSearch)}` : ""}`)
             if (res.ok) {
                 const data = await res.json()
                 setNotes(data.notes)
@@ -46,17 +46,19 @@ export default function NotesPage() {
         } finally {
             setLoading(false)
         }
-    }, [page])
+    }, [])
 
     useEffect(() => {
-        fetchNotes()
-    }, [fetchNotes])
+        const timeout = setTimeout(() => {
+            fetchNotes(search, page)
+        }, 300)
+        return () => clearTimeout(timeout)
+    }, [search, page, fetchNotes])
 
-    const filteredNotes = notes.filter(note =>
-        note.subject.toLowerCase().includes(search.toLowerCase()) ||
-        note.branch.toLowerCase().includes(search.toLowerCase()) ||
-        note.module.toLowerCase().includes(search.toLowerCase())
-    )
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearch(e.target.value)
+        setPage(1) // Reset to first page on new search
+    }
 
     return (
         <div className="min-h-screen bg-white dark:bg-transparent flex flex-col">
@@ -77,7 +79,7 @@ export default function NotesPage() {
                             type="text"
                             placeholder="Search notes..."
                             value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            onChange={handleSearchChange}
                             className="w-full pl-12 pr-4 py-3 rounded-md shadow-[6px_6px_0px_0px_#737373] hover:shadow-[8px_8px_0px_0px_#737373] active:shadow-[4px_4px_0px_0px_#737373] transition-all duration-100 ease-in border-2 border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 dark:text-neutral-100 focus:border-black dark:focus:border-white outline-none font-poppins"
                         />
                     </div>
@@ -93,7 +95,7 @@ export default function NotesPage() {
                          {!search && <RecentNotes />}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {filteredNotes.map(note => (
+                            {notes.map(note => (
                                 <NoteCard key={note.id} note={note} />
                             ))}
                         </div>
@@ -121,7 +123,7 @@ export default function NotesPage() {
                     </div>
                 )}
 
-                {!loading && filteredNotes.length === 0 && (
+                {!loading && notes.length === 0 && (
                     <div className="text-center py-20 text-neutral-400 font-poppins">
                         No notes found matching your search.
                     </div>
