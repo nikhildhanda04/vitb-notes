@@ -97,7 +97,7 @@ const FORMATTING_RULES = `
         *   **Formulas**: Clearly state formulas before applying them.
     3.  **Formatting**:
         *   Use extensive Markdown features: Bullet points, **Bold** for emphasis, *Italic* for definitions.
-        *   **Mermaid Diagrams**: Visualise processes/flowcharts where applicable.
+        *   **Mermaid Diagrams**: Visualise processes/flowcharts where applicable. Always wrap node labels and edge labels in double quotes, e.g. A["Admission (s.7)"] -->|"Yes"| B{"Approved?"}.
         *   **Code Blocks**: Use for algorithms or programming concepts.
     4.  **Examples**: Include real-world analogies and application examples.
     5.  **Common Questions**: End the topic with a "Common Questions & pitfalls" section.

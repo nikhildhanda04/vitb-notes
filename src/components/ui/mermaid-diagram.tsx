@@ -2,11 +2,13 @@
 
 import React, { useEffect, useRef, useState } from "react"
 import mermaid from "mermaid"
+import { fixMermaid } from "@/lib/mermaid-fix"
 
 mermaid.initialize({
     startOnLoad: false,
     theme: "default",
     securityLevel: "loose",
+    suppressErrorRendering: true, // don't append mermaid's own error graphic to the page
 })
 
 interface MermaidDiagramProps {
@@ -23,12 +25,14 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
         if (chart && ref.current) {
             const renderDiagram = async () => {
                 setLoading(true)
+                const id = `mermaid-${Math.random().toString(36).slice(2, 11)}`
                 try {
-                    const { svg } = await mermaid.render(`mermaid-${Math.random().toString(36).substr(2, 9)}`, chart)
+                    const { svg } = await mermaid.render(id, fixMermaid(chart))
                     setSvg(svg)
                     setError(false)
                 } catch (err) {
                     console.error("Failed to render mermaid diagram:", err)
+                    document.getElementById(`d${id}`)?.remove() // render scratch element left behind on failure
                     setError(true)
                 } finally {
                     setLoading(false)
