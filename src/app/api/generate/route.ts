@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { parseFile } from "@/lib/parsing";
 import { generateOutline } from "@/lib/gemini";
+import { keepAliveJson } from "@/lib/keep-alive";
 
 export const maxDuration = 300;
 
@@ -48,32 +49,22 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Invalid extracted text payload" }, { status: 400 });
         }
 
-        for (const [list, target] of [[files, sources], [pyqFiles, pyqs]] as const) {
-            for (const file of list) {
-                try {
-                    target.push({ name: file.name, text: await parseFile(file) });
-                } catch (error) {
-                    console.error("Parsing error:", error);
-                    return NextResponse.json({ error: `Failed to parse file: ${file.name}` }, { status: 400 });
+        // Parsing (server-side OCR) and the AI call can both take minutes, so run them under a keep-alive stream.
+        // Step 1 of generation: topic outline + quiz + PYQ analysis. Topics are written one by one via /api/generate/topic.
+        return keepAliveJson(async () => {
+            for (const [list, target] of [[files, sources], [pyqFiles, pyqs]] as const) {
+                for (const file of list) {
+                    try {
+                        target.push({ name: file.name, text: await parseFile(file) });
+                    } catch (error) {
+                        throw new Error(`Failed to parse file: ${file.name}`, { cause: error });
+                    }
                 }
             }
-        }
-
-        // Step 1 of generation: topic outline + quiz + PYQ analysis. Topics are written one by one via /api/generate/topic.
-        // Files the server had to parse itself are sent back so the browser can pick passages from them for each topic.
-        const serverParsed = files.length ? sources.slice(-files.length) : [];
-        let generatedContent;
-        try {
-            generatedContent = { ...(await generateOutline(syllabus, sources, pyqs)), serverParsed };
-        } catch (error) {
-            console.error("AI Generation error:", error);
-            return NextResponse.json({
-                error: "Failed to generate notes with AI",
-                details: error instanceof Error ? error.message : String(error)
-            }, { status: 500 });
-        }
-
-        return NextResponse.json(generatedContent);
+            // Files the server had to parse itself are sent back so the browser can pick passages from them for each topic.
+            const serverParsed = files.length ? sources.slice(-files.length) : [];
+            return { ...(await generateOutline(syllabus, sources, pyqs)), serverParsed };
+        }, "Failed to generate notes with AI");
     } catch (error) {
         console.error("Error generating preview:", error);
         return NextResponse.json({

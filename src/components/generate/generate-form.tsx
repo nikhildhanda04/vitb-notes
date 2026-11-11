@@ -80,21 +80,44 @@ async function extractTexts(files: File[], onFileDone: () => void, onStatus: (la
 
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024
 const TOPIC_CONCURRENCY = 3
+const TOPIC_ATTEMPTS = 4
+
+// Retry with backoff (4s, 8s, 16s) so one dropped request doesn't throw away the whole generation
+async function withRetry<T>(fn: () => Promise<T>, attempts: number): Promise<T> {
+    for (let attempt = 1; ; attempt++) {
+        try {
+            return await fn()
+        } catch (err) {
+            if (attempt >= attempts) throw err
+            console.warn(`Attempt ${attempt} failed, retrying`, err)
+            await new Promise(resolve => setTimeout(resolve, 2000 * 2 ** attempt))
+        }
+    }
+}
 
 // POST and return JSON, turning error responses (JSON or plain text from Vercel) into readable errors.
 async function postJson(url: string, body: BodyInit, json = false) {
-    const res = await fetch(url, {
-        method: "POST",
-        body,
-        headers: json ? { "Content-Type": "application/json" } : undefined,
-    })
+    let res: Response
+    try {
+        res = await fetch(url, {
+            method: "POST",
+            body,
+            headers: json ? { "Content-Type": "application/json" } : undefined,
+        })
+    } catch {
+        // fetch only throws when no response arrived at all (connection dropped, offline)
+        throw new Error("Lost connection to the server. Check your internet and try again.")
+    }
     if (!res.ok) {
         const text = await res.text()
         let data: { error?: string; details?: string } = {}
         try { data = JSON.parse(text) } catch { data = { error: text || `Request failed (${res.status})` } }
         throw new Error(data.details ? `${data.error}: ${data.details}` : data.error || "Request failed")
     }
-    return res.json()
+    const data = await res.json()
+    // Streamed (keep-alive) responses are already 200, so failures arrive as { error, details }
+    if (data?.error) throw new Error(data.details ? `${data.error}: ${data.details}` : data.error)
+    return data
 }
 
 // Draft of the form + generated preview, kept in localStorage so a refresh doesn't lose work.
@@ -191,11 +214,14 @@ export function GenerateForm({ user }: GenerateFormProps) {
                     const i = next++
                     const topic = outline.topics[i]
                     const excerpts = relevantExcerpts(allSources, `${topic.title} ${topic.description}`, TOPIC_CHAR_BUDGET)
-                    const result: { content: string; truncated: boolean } = await postJson(
+                    const result: { content: string; truncated: boolean } = await withRetry(() => postJson(
                         "/api/generate/topic",
                         JSON.stringify({ syllabus, topic, allTitles, excerpts }),
                         true,
-                    )
+                    ), TOPIC_ATTEMPTS).catch(err => {
+                        next = outline.topics.length // stop the other workers picking up new topics
+                        throw new Error(`Topic "${topic.title}" failed after ${TOPIC_ATTEMPTS} tries: ${err instanceof Error ? err.message : err}`)
+                    })
                     topics[i] = { ...topic, content: result.content }
                     if (result.truncated) truncated.push(topic.title)
                     written++
