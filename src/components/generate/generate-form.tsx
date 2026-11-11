@@ -33,11 +33,12 @@ async function extractTexts(files: File[], onFileDone: () => void, onStatus: (la
     const result: Extracted = { texts: [], raw: [] }
     let ocr: OcrWorker | null = null
     try {
+        const pdfjs = await import("pdfjs-dist/legacy/build/pdf")
+        pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"
         for (const file of files) {
+            let doc: Awaited<ReturnType<typeof pdfjs.getDocument>["promise"]> | null = null
             try {
-                const pdfjs = await import("pdfjs-dist/legacy/build/pdf")
-                pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"
-                const doc = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise
+                doc = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise
                 let text = ""
                 for (let i = 1; i <= doc.numPages; i++) {
                     const content = await (await doc.getPage(i)).getTextContent()
@@ -68,6 +69,7 @@ async function extractTexts(files: File[], onFileDone: () => void, onStatus: (la
             } catch (err) {
                 console.warn(`Could not read ${file.name} in browser, uploading it instead`, err)
             } finally {
+                await doc?.destroy() // terminates this document's PDF worker
                 onFileDone()
             }
             result.raw.push(file)
@@ -114,10 +116,32 @@ async function postJson(url: string, body: BodyInit, json = false) {
         try { data = JSON.parse(text) } catch { data = { error: text || `Request failed (${res.status})` } }
         throw new Error(data.details ? `${data.error}: ${data.details}` : data.error || "Request failed")
     }
-    const data = await res.json()
-    // Streamed (keep-alive) responses are already 200, so failures arrive as { error, details }
-    if (data?.error) throw new Error(data.details ? `${data.error}: ${data.details}` : data.error)
-    return data
+    return res.json()
+}
+
+const POLL_MS = 3000
+const JOB_DEADLINE_MS = 330_000 // server functions are capped at 300s
+
+// Start a background job, then poll until it finishes. A dropped poll is simply retried,
+// so a flaky connection doesn't lose minutes of AI work.
+async function runJob<T>(url: string, body: BodyInit, json = false): Promise<T> {
+    const { jobId } = await withRetry(() => postJson(url, body, json), 3)
+    const deadline = Date.now() + JOB_DEADLINE_MS
+    while (Date.now() < deadline) {
+        await new Promise(resolve => setTimeout(resolve, POLL_MS))
+        let res: Response
+        let job: { status?: string; result?: T; error?: string }
+        try {
+            res = await fetch(`/api/generate/job?id=${jobId}`)
+            job = await res.json()
+        } catch {
+            continue // poll lost to the network, try again
+        }
+        if (!res.ok) throw new Error(job.error || `Request failed (${res.status})`)
+        if (job.status === "done") return job.result as T
+        if (job.status === "failed") throw new Error(job.error || "Generation failed")
+    }
+    throw new Error("The server took longer than 5 minutes. Try fewer or smaller files.")
 }
 
 // Draft of the form + generated preview, kept in localStorage so a refresh doesn't lose work.
@@ -200,7 +224,7 @@ export function GenerateForm({ user }: GenerateFormProps) {
             setProgress({ label: "AI is planning the topics...", value: 20 })
             const tick = setInterval(() => setProgress(p => p && { ...p, value: p.value + (30 - p.value) * 0.05 }), 1000)
             const outline: { topics: { title: string; description: string }[]; quiz: QuizQuestion[]; probableQuestions: string; truncated: boolean; serverParsed: Source[] } =
-                await postJson("/api/generate", formData).finally(() => clearInterval(tick))
+                await runJob<{ topics: { title: string; description: string }[]; quiz: QuizQuestion[]; probableQuestions: string; truncated: boolean; serverParsed: Source[] }>("/api/generate", formData).finally(() => clearInterval(tick))
             if (outline.topics.length === 0) throw new Error("The AI returned no topics. Try again.")
 
             // Step 2: write each topic separately (3 at a time) so every topic gets the AI's full output budget
@@ -214,7 +238,7 @@ export function GenerateForm({ user }: GenerateFormProps) {
                     const i = next++
                     const topic = outline.topics[i]
                     const excerpts = relevantExcerpts(allSources, `${topic.title} ${topic.description}`, TOPIC_CHAR_BUDGET)
-                    const result: { content: string; truncated: boolean } = await withRetry(() => postJson(
+                    const result = await withRetry(() => runJob<{ content: string; truncated: boolean }>(
                         "/api/generate/topic",
                         JSON.stringify({ syllabus, topic, allTitles, excerpts }),
                         true,

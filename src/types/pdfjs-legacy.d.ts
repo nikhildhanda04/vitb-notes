@@ -6,6 +6,7 @@ declare module 'pdfjs-dist/legacy/build/pdf' {
     export function getDocument(src: unknown): {
         promise: Promise<{
             numPages: number;
+            destroy(): Promise<void>;
             getPage(num: number): Promise<{
                 getViewport(options: { scale: number }): { width: number; height: number };
                 getTextContent(): Promise<{ items: Array<{ str: string } | unknown> }>;

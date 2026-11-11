@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { parseFile } from "@/lib/parsing";
 import { generateOutline } from "@/lib/gemini";
-import { keepAliveJson } from "@/lib/keep-alive";
+import { startJob } from "@/lib/jobs";
 
 export const maxDuration = 300;
 
@@ -49,9 +49,9 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Invalid extracted text payload" }, { status: 400 });
         }
 
-        // Parsing (server-side OCR) and the AI call can both take minutes, so run them under a keep-alive stream.
+        // Parsing (server-side OCR) and the AI call can both take minutes, so run them as a background job.
         // Step 1 of generation: topic outline + quiz + PYQ analysis. Topics are written one by one via /api/generate/topic.
-        return keepAliveJson(async () => {
+        return startJob(session.user.id, async () => {
             for (const [list, target] of [[files, sources], [pyqFiles, pyqs]] as const) {
                 for (const file of list) {
                     try {

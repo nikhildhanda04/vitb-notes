@@ -128,3 +128,15 @@ model Question {
 
   @@map("question")
 }
+
+// Long AI generation steps run in the background; the browser polls for the result.
+model GenerationJob {
+  id        String   @id @default(cuid())
+  userId    String
+  status    String   // running | done | failed
+  result    Json?
+  error     String?
+  createdAt DateTime @default(now())
+
+  @@map("generation_job")
+}

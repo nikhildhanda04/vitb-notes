@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { generateTopic } from "@/lib/gemini";
-import { keepAliveJson } from "@/lib/keep-alive";
+import { startJob } from "@/lib/jobs";
 import { TOPIC_CHAR_BUDGET, type Source } from "@/lib/sources";
 
 export const maxDuration = 300;
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Source passages too large" }, { status: 400 });
         }
 
-        return keepAliveJson(() => generateTopic(syllabus, topic, allTitles, excerpts), `Failed to write topic "${topic.title}" with AI`);
+        return startJob(session.user.id, () => generateTopic(syllabus, topic, allTitles, excerpts), `Failed to write topic "${topic.title}" with AI`);
     } catch (error) {
         console.error("Error generating topic:", error);
         return NextResponse.json({
