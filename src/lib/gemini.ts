@@ -73,31 +73,40 @@ const FALLBACK_MODELS = [
   'gemini-2.5-flash-lite'  // Fallback (Fast & Cheap)
 ];
 
-export async function generateNotes(syllabus: string, sourceText: string) {
+// ponytail: fixed char budget split evenly per file, size by file length if big files get cut short
+const SOURCE_CHAR_BUDGET = 400000;
+
+export async function generateNotes(syllabus: string, sources: { name: string; text: string }[]) {
+  const perFile = Math.floor(SOURCE_CHAR_BUDGET / Math.max(sources.length, 1));
+  const sourceText = sources
+    .map((s, i) => `--- Reference File ${i + 1} of ${sources.length}: ${s.name} ---\n${s.text.slice(0, perFile)}`)
+    .join("\n\n");
+
   const prompt = `
-    You are an expert educational assistant. Generate detailed study notes based on the provided Syllabus and Source Material.
+    You are an expert educational assistant. Generate detailed study notes based on the provided Syllabus and Source Material (which may contain several reference files).
 
     **Instructions:**
     **Content & Formatting Standards:**
     1.  **Structure**: Follow the syllabus topics exactly.
-    2.  **Verbosity**: Provide extensive, textbook-quality notes. Avoid brief summaries.
-    3.  **Mathematical Content**:
+    2.  **Use Every Reference File**: Read ALL reference files, not just the first. Take topics from every file: for each syllabus topic, combine the relevant material from all files, and add a topic for any important syllabus-related concept a file covers that the syllabus list misses. No reference file may be ignored.
+    3.  **Verbosity**: Provide extensive, textbook-quality notes. Avoid brief summaries.
+    4.  **Mathematical Content**:
         *   Use **LaTeX** for all formulas and symbols (e.g., $E=mc^2$, $\\sum_{i=0}^n$).
         *   **Step-by-Step Solutions**: For every quantitative concept, provide at least one detailed solved example. Break it down into clear steps (Step 1, Step 2, etc.).
         *   **Examples and Solutions**: Provide atleast one example and step by step solution for every quntative concept. 
         *   **Formulas**: Clearly state formulas before applying them.
-    4.  **Formatting**:
+    5.  **Formatting**:
         *   Use extensive Markdown features: Bullet points, **Bold** for emphasis, *Italic* for definitions.
         *   **Mermaid Diagrams**: Visualise processes/flowcharts where applicable.
         *   **Code Blocks**: Use for algorithms or programming concepts.
-    5.  **Examples**: Include real-world analogies and application examples.
-    6.  **Common Questions**: End each major topic with a "Common Questions & pitfalls" section.
+    6.  **Examples**: Include real-world analogies and application examples.
+    7.  **Common Questions**: End each major topic with a "Common Questions & pitfalls" section.
 
     **Syllabus:**
     ${syllabus}
 
     **Source Material:**
-    ${sourceText ? sourceText.slice(0, 50000) : "No source material provided. Use general knowledge."}
+    ${sourceText || "No source material provided. Use general knowledge."}
 
     Generate 5-10 quiz questions.
   `;
@@ -121,7 +130,7 @@ export async function generateNotes(syllabus: string, sourceText: string) {
         generationConfig: {
           responseMimeType: "application/json",
           responseSchema: schema,
-          maxOutputTokens: 8192,
+          maxOutputTokens: 65536,
           temperature: 0.1,
         },
       });

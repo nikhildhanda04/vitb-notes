@@ -19,27 +19,27 @@ export async function POST(req: Request) {
         }
 
         const formData = await req.formData();
-        const file = formData.get("file") as File | null;
+        const files = formData.getAll("file").filter((f): f is File => f instanceof File && f.size > 0);
         const syllabus = formData.get("syllabus") as string | null;
 
         if (!syllabus) {
             return NextResponse.json({ error: "Syllabus is required" }, { status: 400 });
         }
 
-        let sourceText = "";
+        const sources: { name: string; text: string }[] = [];
 
-        if (file) {
+        for (const file of files) {
             try {
-                sourceText = await parseFile(file);
+                sources.push({ name: file.name, text: await parseFile(file) });
             } catch (error) {
                 console.error("Parsing error:", error);
-                return NextResponse.json({ error: "Failed to parse file" }, { status: 400 });
+                return NextResponse.json({ error: `Failed to parse file: ${file.name}` }, { status: 400 });
             }
         }
 
         let generatedContent;
         try {
-            generatedContent = await generateNotes(syllabus, sourceText);
+            generatedContent = await generateNotes(syllabus, sources);
         } catch (error) {
             console.error("AI Generation error:", error);
             return NextResponse.json({

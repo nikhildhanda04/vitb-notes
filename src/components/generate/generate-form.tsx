@@ -37,7 +37,7 @@ export function GenerateForm({ user }: GenerateFormProps) {
     const [subject, setSubject] = useState("")
     const [subjectCode, setSubjectCode] = useState("")
     const [syllabus, setSyllabus] = useState("")
-    const [file, setFile] = useState<File | null>(null)
+    const [files, setFiles] = useState<File[]>([])
 
     const [previewData, setPreviewData] = useState<PreviewData | null>(null)
 
@@ -48,9 +48,7 @@ export function GenerateForm({ user }: GenerateFormProps) {
 
         const formData = new FormData()
         formData.append("syllabus", syllabus)
-        if (file) {
-            formData.append("file", file)
-        }
+        files.forEach(f => formData.append("file", f))
 
         try {
             const res = await fetch("/api/generate", {
@@ -109,7 +107,7 @@ export function GenerateForm({ user }: GenerateFormProps) {
             // Reset form
             setModule("")
             setSyllabus("")
-            setFile(null)
+            setFiles([])
             setPreviewData(null)
         } catch (err: unknown) {
             setMessage(err instanceof Error ? err.message : "An error occurred")
@@ -298,14 +296,15 @@ export function GenerateForm({ user }: GenerateFormProps) {
 
                         <div className="flex flex-col gap-1">
                             <label className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
-                                <Upload className="w-4 h-4" /> Reference File (Optional)
+                                <Upload className="w-4 h-4" /> Reference Files (Optional)
                             </label>
                             <input
                                 type="file"
-                                onChange={e => setFile(e.target.files?.[0] || null)}
+                                multiple
+                                onChange={e => setFiles(Array.from(e.target.files ?? []))}
                                 className="p-2 rounded border text-black border-neutral-300 bg-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-neutral-100 file:text-neutral-700 hover:file:bg-neutral-200"
                             />
-                            <p className="text-xs text-neutral-400">Supports PDF, PPTX</p>
+                            <p className="text-xs text-neutral-400">Supports PDF, PPTX. Select multiple files; topics are taken from all of them.</p>
                         </div>
                     </div>
                 </div>
