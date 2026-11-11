@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Progress } from "@/components/ui/progress"
+import type { Worker as OcrWorker } from "tesseract.js"
 import { Loader2, BookOpen, Type, GraduationCap, Calendar, GitBranch, FileText, Upload } from "lucide-react"
 
 interface Topic {
@@ -24,35 +25,70 @@ interface PreviewData {
 
 type Extracted = { texts: { name: string; text: string }[]; raw: File[] }
 
-// Vercel rejects request bodies over 4.5MB, so pull PDF text out in the browser and only
-// upload files that have no text layer (scanned PDFs) for server-side OCR.
-async function extractTexts(files: File[], onFileDone: () => void): Promise<Extracted> {
+// Vercel rejects request bodies over 4.5MB, so read PDFs in the browser (text layer, or OCR for
+// scanned PDFs) and send only text. Files that still can't be read are uploaded for the server to try.
+async function extractTexts(files: File[], onFileDone: () => void, onStatus: (label: string) => void): Promise<Extracted> {
     const result: Extracted = { texts: [], raw: [] }
-    for (const file of files) {
-        try {
-            const pdfjs = await import("pdfjs-dist/legacy/build/pdf")
-            pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"
-            const doc = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise
-            let text = ""
-            for (let i = 1; i <= doc.numPages; i++) {
-                const content = await (await doc.getPage(i)).getTextContent()
-                text += content.items.map(item => (item as { str?: string }).str || "").join(" ") + "\n\n"
+    let ocr: OcrWorker | null = null
+    try {
+        for (const file of files) {
+            try {
+                const pdfjs = await import("pdfjs-dist/legacy/build/pdf")
+                pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"
+                const doc = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise
+                let text = ""
+                for (let i = 1; i <= doc.numPages; i++) {
+                    const content = await (await doc.getPage(i)).getTextContent()
+                    text += content.items.map(item => (item as { str?: string }).str || "").join(" ") + "\n\n"
+                }
+                if (text.trim().length <= 50) {
+                    // Scanned PDF: OCR each page here so the file never has to be uploaded
+                    if (!ocr) {
+                        const { createWorker } = await import("tesseract.js")
+                        ocr = await createWorker("eng")
+                    }
+                    text = ""
+                    const canvas = document.createElement("canvas")
+                    for (let i = 1; i <= doc.numPages; i++) {
+                        onStatus(`Scanning ${file.name} (page ${i}/${doc.numPages})...`)
+                        const page = await doc.getPage(i)
+                        const viewport = page.getViewport({ scale: 2 })
+                        canvas.width = viewport.width
+                        canvas.height = viewport.height
+                        await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise
+                        text += (await ocr.recognize(canvas)).data.text + "\n\n"
+                    }
+                }
+                if (text.trim().length > 50) {
+                    result.texts.push({ name: file.name, text: text.trim() })
+                    continue
+                }
+            } catch (err) {
+                console.warn(`Could not read ${file.name} in browser, uploading it instead`, err)
+            } finally {
+                onFileDone()
             }
-            if (text.trim().length > 50) {
-                result.texts.push({ name: file.name, text: text.trim() })
-                continue
-            }
-        } catch (err) {
-            console.warn(`Could not extract text from ${file.name} in browser, uploading it instead`, err)
-        } finally {
-            onFileDone()
+            result.raw.push(file)
         }
-        result.raw.push(file)
+    } finally {
+        await ocr?.terminate()
     }
     return result
 }
 
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024
+
+// Draft of the form + generated preview, kept in localStorage so a refresh doesn't lose work.
+// Files can't be restored by browsers, so they have to be re-selected.
+const DRAFT_KEY = "generate-draft"
+
+function loadDraft(): Record<string, string> & { previewData?: PreviewData | null } {
+    try {
+        return JSON.parse(localStorage.getItem(DRAFT_KEY) || "{}")
+    } catch {
+        return {}
+    }
+}
 
 interface GenerateFormProps {
     user: unknown 
@@ -64,18 +100,27 @@ export function GenerateForm({ user }: GenerateFormProps) {
     const [message, setMessage] = useState("")
 
     // Form states
-    const [module, setModule] = useState("")
-    const [semester, setSemester] = useState("")
-    const [year, setYear] = useState("")
-    const [branch, setBranch] = useState("")
-    const [specialization, setSpecialization] = useState("")
-    const [subject, setSubject] = useState("")
-    const [subjectCode, setSubjectCode] = useState("")
-    const [syllabus, setSyllabus] = useState("")
+    const [draft] = useState(loadDraft)
+    const [module, setModule] = useState(draft.module ?? "")
+    const [semester, setSemester] = useState(draft.semester ?? "")
+    const [year, setYear] = useState(draft.year ?? "")
+    const [branch, setBranch] = useState(draft.branch ?? "")
+    const [specialization, setSpecialization] = useState(draft.specialization ?? "")
+    const [subject, setSubject] = useState(draft.subject ?? "")
+    const [subjectCode, setSubjectCode] = useState(draft.subjectCode ?? "")
+    const [syllabus, setSyllabus] = useState(draft.syllabus ?? "")
     const [files, setFiles] = useState<File[]>([])
     const [pyqFiles, setPyqFiles] = useState<File[]>([])
 
-    const [previewData, setPreviewData] = useState<PreviewData | null>(null)
+    const [previewData, setPreviewData] = useState<PreviewData | null>(draft.previewData ?? null)
+
+    useEffect(() => {
+        try {
+            localStorage.setItem(DRAFT_KEY, JSON.stringify({ module, semester, year, branch, specialization, subject, subjectCode, syllabus, previewData }))
+        } catch (e) {
+            console.warn("Could not save draft", e) // e.g. storage full or blocked
+        }
+    }, [module, semester, year, branch, specialization, subject, subjectCode, syllabus, previewData])
 
     const handleGenerate = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -91,11 +136,12 @@ export function GenerateForm({ user }: GenerateFormProps) {
                 setProgress({ label: `Reading files (${read}/${total})...`, value: (read / total) * 30 })
             }
             setProgress({ label: "Reading files...", value: 0 })
-            const [refs, pyqs] = await Promise.all([extractTexts(files, onFileDone), extractTexts(pyqFiles, onFileDone)])
+            const onStatus = (label: string) => setProgress(p => ({ label, value: p?.value ?? 0 }))
+            const [refs, pyqs] = await Promise.all([extractTexts(files, onFileDone, onStatus), extractTexts(pyqFiles, onFileDone, onStatus)])
             const rawFiles = [...refs.raw, ...pyqs.raw]
             const rawBytes = rawFiles.reduce((sum, f) => sum + f.size, 0)
             if (rawBytes > MAX_UPLOAD_BYTES) {
-                throw new Error(`These files have no readable text and are too large to upload for OCR (${(rawBytes / 1024 / 1024).toFixed(1)}MB, limit 4MB): ${rawFiles.map(f => f.name).join(", ")}. Upload fewer scanned files at a time.`)
+                throw new Error(`Couldn't read these files in the browser, and they are too large to upload (${(rawBytes / 1024 / 1024).toFixed(1)}MB, limit 4MB): ${rawFiles.map(f => f.name).join(", ")}. Try re-saving them as PDF or uploading fewer at a time.`)
             }
 
             const formData = new FormData()
