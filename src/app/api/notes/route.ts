@@ -46,6 +46,7 @@ export async function POST(req: Request) {
 
         const topics = formData.get("topics") as string;
         const quiz = formData.get("quiz") as string;
+        const probableQuestions = (formData.get("probableQuestions") as string | null) || null;
 
         if (!syllabus || !module || !semester || !year || !branch || !subject || !topics) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -69,6 +70,7 @@ export async function POST(req: Request) {
                 specialization,
                 subject,
                 subjectCode,
+                probableQuestions,
                 userId: session.user.id,
                 topics: {
                     create: parsedTopics.map((topic: Topic) => ({

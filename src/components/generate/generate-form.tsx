@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from "react"
+import { Progress } from "@/components/ui/progress"
 import { Loader2, BookOpen, Type, GraduationCap, Calendar, GitBranch, FileText, Upload } from "lucide-react"
 
 interface Topic {
@@ -18,7 +19,40 @@ interface QuizQuestion {
 interface PreviewData {
     topics: Topic[]
     quiz?: QuizQuestion[]
+    probableQuestions?: string
 }
+
+type Extracted = { texts: { name: string; text: string }[]; raw: File[] }
+
+// Vercel rejects request bodies over 4.5MB, so pull PDF text out in the browser and only
+// upload files that have no text layer (scanned PDFs) for server-side OCR.
+async function extractTexts(files: File[], onFileDone: () => void): Promise<Extracted> {
+    const result: Extracted = { texts: [], raw: [] }
+    for (const file of files) {
+        try {
+            const pdfjs = await import("pdfjs-dist/legacy/build/pdf")
+            pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"
+            const doc = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise
+            let text = ""
+            for (let i = 1; i <= doc.numPages; i++) {
+                const content = await (await doc.getPage(i)).getTextContent()
+                text += content.items.map(item => (item as { str?: string }).str || "").join(" ") + "\n\n"
+            }
+            if (text.trim().length > 50) {
+                result.texts.push({ name: file.name, text: text.trim() })
+                continue
+            }
+        } catch (err) {
+            console.warn(`Could not extract text from ${file.name} in browser, uploading it instead`, err)
+        } finally {
+            onFileDone()
+        }
+        result.raw.push(file)
+    }
+    return result
+}
+
+const MAX_UPLOAD_BYTES = 4 * 1024 * 1024
 
 interface GenerateFormProps {
     user: unknown 
@@ -26,6 +60,7 @@ interface GenerateFormProps {
 
 export function GenerateForm({ user }: GenerateFormProps) {
     const [loading, setLoading] = useState(false)
+    const [progress, setProgress] = useState<{ label: string; value: number } | null>(null)
     const [message, setMessage] = useState("")
 
     // Form states
@@ -38,6 +73,7 @@ export function GenerateForm({ user }: GenerateFormProps) {
     const [subjectCode, setSubjectCode] = useState("")
     const [syllabus, setSyllabus] = useState("")
     const [files, setFiles] = useState<File[]>([])
+    const [pyqFiles, setPyqFiles] = useState<File[]>([])
 
     const [previewData, setPreviewData] = useState<PreviewData | null>(null)
 
@@ -46,18 +82,41 @@ export function GenerateForm({ user }: GenerateFormProps) {
         setLoading(true)
         setMessage("")
 
-        const formData = new FormData()
-        formData.append("syllabus", syllabus)
-        files.forEach(f => formData.append("file", f))
-
         try {
+            // Reading files is real progress (0-30%)
+            const total = files.length + pyqFiles.length
+            let read = 0
+            const onFileDone = () => {
+                read++
+                setProgress({ label: `Reading files (${read}/${total})...`, value: (read / total) * 30 })
+            }
+            setProgress({ label: "Reading files...", value: 0 })
+            const [refs, pyqs] = await Promise.all([extractTexts(files, onFileDone), extractTexts(pyqFiles, onFileDone)])
+            const rawFiles = [...refs.raw, ...pyqs.raw]
+            const rawBytes = rawFiles.reduce((sum, f) => sum + f.size, 0)
+            if (rawBytes > MAX_UPLOAD_BYTES) {
+                throw new Error(`These files have no readable text and are too large to upload for OCR (${(rawBytes / 1024 / 1024).toFixed(1)}MB, limit 4MB): ${rawFiles.map(f => f.name).join(", ")}. Upload fewer scanned files at a time.`)
+            }
+
+            const formData = new FormData()
+            formData.append("syllabus", syllabus)
+            formData.append("texts", JSON.stringify(refs.texts))
+            formData.append("pyqTexts", JSON.stringify(pyqs.texts))
+            refs.raw.forEach(f => formData.append("file", f))
+            pyqs.raw.forEach(f => formData.append("pyq", f))
+
+            // ponytail: the AI call reports no progress, so ease toward 95% over time; stream from Gemini for real progress
+            setProgress({ label: "AI is writing your notes...", value: 30 })
+            const tick = setInterval(() => setProgress(p => p && { ...p, value: p.value + (95 - p.value) * 0.02 }), 1000)
             const res = await fetch("/api/generate", {
                 method: "POST",
                 body: formData,
-            })
+            }).finally(() => clearInterval(tick))
 
             if (!res.ok) {
-                const data = await res.json()
+                const body = await res.text()
+                let data: { error?: string; details?: string } = {}
+                try { data = JSON.parse(body) } catch { data = { error: body || `Request failed (${res.status})` } }
                 throw new Error(data.details ? `${data.error}: ${data.details}` : data.error || "Failed to generate preview")
             }
 
@@ -68,6 +127,7 @@ export function GenerateForm({ user }: GenerateFormProps) {
             setMessage(err instanceof Error ? err.message : "An error occurred")
         } finally {
             setLoading(false)
+            setProgress(null)
         }
     }
 
@@ -90,6 +150,9 @@ export function GenerateForm({ user }: GenerateFormProps) {
         if (previewData.quiz) {
             formData.append("quiz", JSON.stringify(previewData.quiz))
         }
+        if (previewData.probableQuestions) {
+            formData.append("probableQuestions", previewData.probableQuestions)
+        }
 
         try {
             const res = await fetch("/api/notes", {
@@ -108,6 +171,7 @@ export function GenerateForm({ user }: GenerateFormProps) {
             setModule("")
             setSyllabus("")
             setFiles([])
+            setPyqFiles([])
             setPreviewData(null)
         } catch (err: unknown) {
             setMessage(err instanceof Error ? err.message : "An error occurred")
@@ -137,6 +201,13 @@ export function GenerateForm({ user }: GenerateFormProps) {
                             <div className="text-sm text-neutral-800 line-clamp-3">{topic.content}</div>
                         </div>
                     ))}
+
+                    {previewData.probableQuestions && (
+                        <>
+                            <h2 className="text-2xl text-neutral-800 font-bold mb-4 mt-8">Probable Questions</h2>
+                            <div className="text-sm text-neutral-800 whitespace-pre-wrap">{previewData.probableQuestions}</div>
+                        </>
+                    )}
 
                     {previewData.quiz && (
                         <>
@@ -306,11 +377,35 @@ export function GenerateForm({ user }: GenerateFormProps) {
                             />
                             <p className="text-xs text-neutral-400">Supports PDF, PPTX. Select multiple files; topics are taken from all of them.</p>
                         </div>
+
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
+                                <Upload className="w-4 h-4" /> Previous Year Papers (Optional)
+                            </label>
+                            <input
+                                type="file"
+                                multiple
+                                accept=".pdf"
+                                onChange={e => setPyqFiles(Array.from(e.target.files ?? []))}
+                                className="p-2 rounded border text-black border-neutral-300 bg-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-neutral-100 file:text-neutral-700 hover:file:bg-neutral-200"
+                            />
+                            <p className="text-xs text-neutral-400">AI analyses past papers and adds a Probable Questions section for the next exam.</p>
+                        </div>
                     </div>
                 </div>
 
                 {/* Submit Button */}
                 <div className="md:col-span-2 flex flex-col gap-4">
+                    {progress && (
+                        <div className="flex flex-col gap-2" role="status" aria-live="polite">
+                            <div className="flex justify-between text-sm font-poppins text-neutral-600 dark:text-neutral-400">
+                                <span>{progress.label}</span>
+                                <span>{Math.round(progress.value)}%</span>
+                            </div>
+                            <Progress value={progress.value} className="h-3 bg-neutral-200 dark:bg-neutral-800 [&>[data-slot=progress-indicator]]:bg-black dark:[&>[data-slot=progress-indicator]]:bg-neutral-100" />
+                        </div>
+                    )}
+
                     {message && (
                         <div className={`p-4 rounded-lg text-center font-poppins ${message.includes("success") ? "bg-green-100 text-green-700 border border-green-200" : "bg-red-100 text-red-700 border border-red-200"}`}>
                             {message}

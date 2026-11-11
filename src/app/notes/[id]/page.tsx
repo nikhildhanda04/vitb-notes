@@ -33,6 +33,7 @@ interface Note {
         description: string
         content: string
     }[]
+    probableQuestions?: string | null
     quiz?: {
         questions: {
             id: string
@@ -247,6 +248,23 @@ export default function NoteDetailsPage({ params }: { params: Promise<{ id: stri
                             </div>
                         ))}
                     </div>
+
+                    {/* Probable Questions (from PYQ analysis) */}
+                    {note.probableQuestions && (
+                        <div id="probable-questions" className="scroll-mt-24 pt-8 border-t border-zinc-200 dark:border-zinc-800">
+                            <h2 className="text-2xl font-bold text-zinc-800 dark:text-zinc-100 font-inter mb-4">
+                                Probable Questions for Next Exam
+                            </h2>
+                            <div className="bg-white dark:bg-neutral-900 border border-zinc-200 dark:border-zinc-700 rounded-xl p-8 shadow-sm">
+                                <div className="prose prose-zinc dark:prose-invert max-w-none">
+                                    <p className="text-zinc-600 dark:text-zinc-400 mb-6 font-poppins italic border-l-4 border-zinc-200 dark:border-zinc-700 pl-4">
+                                        AI predictions based on previous year papers. Use them to set priorities, and still revise the full syllabus.
+                                    </p>
+                                    <NoteContent content={note.probableQuestions} font={font} fontSize={fontSize} />
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Quiz Section */}
                     {note.quiz && note.quiz.questions.length > 0 && (

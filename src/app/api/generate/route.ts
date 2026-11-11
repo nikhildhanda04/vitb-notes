@@ -4,6 +4,15 @@ import { NextResponse } from "next/server";
 import { parseFile } from "@/lib/parsing";
 import { generateNotes } from "@/lib/gemini";
 
+function parseTexts(value: FormDataEntryValue | null): { name: string; text: string }[] {
+    if (typeof value !== "string" || !value) return [];
+    const parsed: unknown = JSON.parse(value);
+    if (!Array.isArray(parsed) || !parsed.every(t => typeof t?.name === "string" && typeof t?.text === "string")) {
+        throw new Error("bad texts");
+    }
+    return parsed;
+}
+
 export async function POST(req: Request) {
     try {
         const session = await auth.api.getSession({
@@ -20,26 +29,37 @@ export async function POST(req: Request) {
 
         const formData = await req.formData();
         const files = formData.getAll("file").filter((f): f is File => f instanceof File && f.size > 0);
+        const pyqFiles = formData.getAll("pyq").filter((f): f is File => f instanceof File && f.size > 0);
         const syllabus = formData.get("syllabus") as string | null;
 
         if (!syllabus) {
             return NextResponse.json({ error: "Syllabus is required" }, { status: 400 });
         }
 
-        const sources: { name: string; text: string }[] = [];
+        // Text the browser already extracted (keeps the request under Vercel's 4.5MB body limit)
+        let sources: { name: string; text: string }[];
+        let pyqs: { name: string; text: string }[];
+        try {
+            sources = parseTexts(formData.get("texts"));
+            pyqs = parseTexts(formData.get("pyqTexts"));
+        } catch {
+            return NextResponse.json({ error: "Invalid extracted text payload" }, { status: 400 });
+        }
 
-        for (const file of files) {
-            try {
-                sources.push({ name: file.name, text: await parseFile(file) });
-            } catch (error) {
-                console.error("Parsing error:", error);
-                return NextResponse.json({ error: `Failed to parse file: ${file.name}` }, { status: 400 });
+        for (const [list, target] of [[files, sources], [pyqFiles, pyqs]] as const) {
+            for (const file of list) {
+                try {
+                    target.push({ name: file.name, text: await parseFile(file) });
+                } catch (error) {
+                    console.error("Parsing error:", error);
+                    return NextResponse.json({ error: `Failed to parse file: ${file.name}` }, { status: 400 });
+                }
             }
         }
 
         let generatedContent;
         try {
-            generatedContent = await generateNotes(syllabus, sources);
+            generatedContent = await generateNotes(syllabus, sources, pyqs);
         } catch (error) {
             console.error("AI Generation error:", error);
             return NextResponse.json({

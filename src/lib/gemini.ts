@@ -45,6 +45,10 @@ const schema: Schema = {
         },
         required: ["question", "options", "answer"]
       }
+    },
+    probableQuestions: {
+      type: SchemaType.STRING,
+      description: "Markdown analysis of the previous year question papers with probable questions for the next exam. Empty string if no papers were given."
     }
   },
   required: ["topics", "quiz"]
@@ -75,12 +79,20 @@ const FALLBACK_MODELS = [
 
 // ponytail: fixed char budget split evenly per file, size by file length if big files get cut short
 const SOURCE_CHAR_BUDGET = 400000;
+const PYQ_CHAR_BUDGET = 100000;
 
-export async function generateNotes(syllabus: string, sources: { name: string; text: string }[]) {
-  const perFile = Math.floor(SOURCE_CHAR_BUDGET / Math.max(sources.length, 1));
-  const sourceText = sources
-    .map((s, i) => `--- Reference File ${i + 1} of ${sources.length}: ${s.name} ---\n${s.text.slice(0, perFile)}`)
+type Source = { name: string; text: string };
+
+const joinSources = (sources: Source[], label: string, budget: number) => {
+  const perFile = Math.floor(budget / Math.max(sources.length, 1));
+  return sources
+    .map((s, i) => `--- ${label} ${i + 1} of ${sources.length}: ${s.name} ---\n${s.text.slice(0, perFile)}`)
     .join("\n\n");
+};
+
+export async function generateNotes(syllabus: string, sources: Source[], pyqs: Source[] = []) {
+  const sourceText = joinSources(sources, "Reference File", SOURCE_CHAR_BUDGET);
+  const pyqText = joinSources(pyqs, "Previous Year Paper", PYQ_CHAR_BUDGET);
 
   const prompt = `
     You are an expert educational assistant. Generate detailed study notes based on the provided Syllabus and Source Material (which may contain several reference files).
@@ -109,6 +121,19 @@ export async function generateNotes(syllabus: string, sources: { name: string; t
     ${sourceText || "No source material provided. Use general knowledge."}
 
     Generate 5-10 quiz questions.
+${pyqText ? `
+    **Previous Year Question Papers (PYQs):**
+    ${pyqText}
+
+    **Probable Questions (fill the "probableQuestions" field, Markdown):**
+    Analyse ALL the previous year papers above against the syllabus and predict the next exam.
+    1.  **Topic Frequency**: A Markdown table of syllabus topics with how many papers asked about them and the typical marks.
+    2.  **Probable Questions**: 10-15 likely questions for the next exam, grouped by likelihood under "### High", "### Medium" and "### Low" headings. For each, give the question, expected marks, and a one-line reason (e.g. "asked in 3 of 4 papers", "syllabus topic never asked yet").
+    3.  **Patterns**: Short bullet list of patterns noticed (question styles, repeated numericals, marks distribution).
+    Base predictions on evidence from the papers; do not copy a past question verbatim unless it repeats across papers.
+` : `
+    No previous year papers were given: set "probableQuestions" to an empty string.
+`}
   `;
 
   let currentKeyIndex = 0;
