@@ -69,9 +69,8 @@ function isQuizQuestion(obj: unknown): obj is QuizQuestion {
 }
 
 const FALLBACK_MODELS = [
-  'gemini-2.0-flash-lite', // Primary (Fast & Cheap)
-  'gemini-2.0-flash',      // Fallback 1 (Robust)
-  'gemini-2.5-flash'       // Fallback 2 (Newer/Experimental)
+  'gemini-2.5-flash',      // Primary (same as love-lafda-solver)
+  'gemini-2.5-flash-lite'  // Fallback (Fast & Cheap)
 ];
 
 export async function generateNotes(syllabus: string, sourceText: string) {
