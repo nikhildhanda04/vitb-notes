@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { Progress } from "@/components/ui/progress"
 import type { Worker as OcrWorker } from "tesseract.js"
+import { fitToBudget, relevantExcerpts, OUTLINE_CHAR_BUDGET, PYQ_CHAR_BUDGET, TOPIC_CHAR_BUDGET, type Source } from "@/lib/sources"
 import { Loader2, BookOpen, Type, GraduationCap, Calendar, GitBranch, FileText, Upload } from "lucide-react"
 
 interface Topic {
@@ -21,6 +22,7 @@ interface PreviewData {
     topics: Topic[]
     quiz?: QuizQuestion[]
     probableQuestions?: string
+    truncated?: string[] // parts the AI was cut off on (hit its output limit)
 }
 
 type Extracted = { texts: { name: string; text: string }[]; raw: File[] }
@@ -77,6 +79,23 @@ async function extractTexts(files: File[], onFileDone: () => void, onStatus: (la
 }
 
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024
+const TOPIC_CONCURRENCY = 3
+
+// POST and return JSON, turning error responses (JSON or plain text from Vercel) into readable errors.
+async function postJson(url: string, body: BodyInit, json = false) {
+    const res = await fetch(url, {
+        method: "POST",
+        body,
+        headers: json ? { "Content-Type": "application/json" } : undefined,
+    })
+    if (!res.ok) {
+        const text = await res.text()
+        let data: { error?: string; details?: string } = {}
+        try { data = JSON.parse(text) } catch { data = { error: text || `Request failed (${res.status})` } }
+        throw new Error(data.details ? `${data.error}: ${data.details}` : data.error || "Request failed")
+    }
+    return res.json()
+}
 
 // Draft of the form + generated preview, kept in localStorage so a refresh doesn't lose work.
 // Files can't be restored by browsers, so they have to be re-selected.
@@ -128,46 +147,65 @@ export function GenerateForm({ user }: GenerateFormProps) {
         setMessage("")
 
         try {
-            // Reading files is real progress (0-30%)
+            // Reading files is real progress (0-20%)
             const total = files.length + pyqFiles.length
             let read = 0
             const onFileDone = () => {
                 read++
-                setProgress({ label: `Reading files (${read}/${total})...`, value: (read / total) * 30 })
+                setProgress({ label: `Reading files (${read}/${total})...`, value: (read / total) * 20 })
             }
             setProgress({ label: "Reading files...", value: 0 })
             const onStatus = (label: string) => setProgress(p => ({ label, value: p?.value ?? 0 }))
             const [refs, pyqs] = await Promise.all([extractTexts(files, onFileDone, onStatus), extractTexts(pyqFiles, onFileDone, onStatus)])
-            const rawFiles = [...refs.raw, ...pyqs.raw]
-            const rawBytes = rawFiles.reduce((sum, f) => sum + f.size, 0)
-            if (rawBytes > MAX_UPLOAD_BYTES) {
-                throw new Error(`Couldn't read these files in the browser, and they are too large to upload (${(rawBytes / 1024 / 1024).toFixed(1)}MB, limit 4MB): ${rawFiles.map(f => f.name).join(", ")}. Try re-saving them as PDF or uploading fewer at a time.`)
-            }
 
             const formData = new FormData()
             formData.append("syllabus", syllabus)
-            formData.append("texts", JSON.stringify(refs.texts))
-            formData.append("pyqTexts", JSON.stringify(pyqs.texts))
+            const textsJson = JSON.stringify(fitToBudget(refs.texts, OUTLINE_CHAR_BUDGET))
+            const pyqTextsJson = JSON.stringify(fitToBudget(pyqs.texts, PYQ_CHAR_BUDGET))
+            formData.append("texts", textsJson)
+            formData.append("pyqTexts", pyqTextsJson)
             refs.raw.forEach(f => formData.append("file", f))
             pyqs.raw.forEach(f => formData.append("pyq", f))
 
-            // ponytail: the AI call reports no progress, so ease toward 95% over time; stream from Gemini for real progress
-            setProgress({ label: "AI is writing your notes...", value: 30 })
-            const tick = setInterval(() => setProgress(p => p && { ...p, value: p.value + (95 - p.value) * 0.02 }), 1000)
-            const res = await fetch("/api/generate", {
-                method: "POST",
-                body: formData,
-            }).finally(() => clearInterval(tick))
-
-            if (!res.ok) {
-                const body = await res.text()
-                let data: { error?: string; details?: string } = {}
-                try { data = JSON.parse(body) } catch { data = { error: body || `Request failed (${res.status})` } }
-                throw new Error(data.details ? `${data.error}: ${data.details}` : data.error || "Failed to generate preview")
+            const rawFiles = [...refs.raw, ...pyqs.raw]
+            const requestBytes = new Blob([textsJson, pyqTextsJson]).size + rawFiles.reduce((sum, f) => sum + f.size, 0)
+            if (requestBytes > MAX_UPLOAD_BYTES) {
+                throw new Error(`Too much to upload at once (${(requestBytes / 1024 / 1024).toFixed(1)}MB, limit 4MB).${rawFiles.length ? ` These files couldn't be read in the browser: ${rawFiles.map(f => f.name).join(", ")}. Try re-saving them as PDF or uploading fewer at a time.` : ""}`)
             }
 
-            const data = await res.json()
-            setPreviewData(data)
+            // Step 1: outline. The AI call reports no progress, so ease toward 30% while waiting.
+            setProgress({ label: "AI is planning the topics...", value: 20 })
+            const tick = setInterval(() => setProgress(p => p && { ...p, value: p.value + (30 - p.value) * 0.05 }), 1000)
+            const outline: { topics: { title: string; description: string }[]; quiz: QuizQuestion[]; probableQuestions: string; truncated: boolean; serverParsed: Source[] } =
+                await postJson("/api/generate", formData).finally(() => clearInterval(tick))
+            if (outline.topics.length === 0) throw new Error("The AI returned no topics. Try again.")
+
+            // Step 2: write each topic separately (3 at a time) so every topic gets the AI's full output budget
+            const allSources = [...refs.texts, ...outline.serverParsed]
+            const allTitles = outline.topics.map(t => t.title)
+            const topics: Topic[] = new Array(outline.topics.length)
+            const truncated: string[] = outline.truncated ? ["Topic list / quiz / probable questions"] : []
+            let next = 0, written = 0
+            const writeTopics = async () => {
+                while (next < outline.topics.length) {
+                    const i = next++
+                    const topic = outline.topics[i]
+                    const excerpts = relevantExcerpts(allSources, `${topic.title} ${topic.description}`, TOPIC_CHAR_BUDGET)
+                    const result: { content: string; truncated: boolean } = await postJson(
+                        "/api/generate/topic",
+                        JSON.stringify({ syllabus, topic, allTitles, excerpts }),
+                        true,
+                    )
+                    topics[i] = { ...topic, content: result.content }
+                    if (result.truncated) truncated.push(topic.title)
+                    written++
+                    setProgress({ label: `Writing topics (${written}/${outline.topics.length}): ${topic.title}`, value: 30 + (written / outline.topics.length) * 70 })
+                }
+            }
+            setProgress({ label: `Writing topics (0/${outline.topics.length})...`, value: 30 })
+            await Promise.all(Array.from({ length: TOPIC_CONCURRENCY }, writeTopics))
+
+            setPreviewData({ topics, quiz: outline.quiz, probableQuestions: outline.probableQuestions, truncated })
             setMessage("Preview generated! Review below and click Upload to save.")
         } catch (err: unknown) {
             setMessage(err instanceof Error ? err.message : "An error occurred")
@@ -237,6 +275,12 @@ export function GenerateForm({ user }: GenerateFormProps) {
                         Review the generated content before uploading.
                     </p>
                 </div>
+
+                {previewData.truncated && previewData.truncated.length > 0 && (
+                    <div className="p-4 rounded-lg font-poppins bg-yellow-50 text-yellow-800 border border-yellow-200" role="alert">
+                        The AI hit its length limit and these parts were cut off at the end: <strong>{previewData.truncated.join(", ")}</strong>. Check them before uploading, or split those syllabus items into smaller ones and generate again.
+                    </div>
+                )}
 
                 <div className="p-6 bg-white border border-neutral-200 rounded-lg shadow-sm max-h-[60vh] overflow-y-auto">
                     <h2 className="text-2xl  text-neutral-800 font-bold mb-4">Topics</h2>

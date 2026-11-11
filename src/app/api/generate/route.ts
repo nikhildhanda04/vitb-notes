@@ -2,7 +2,9 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { parseFile } from "@/lib/parsing";
-import { generateNotes } from "@/lib/gemini";
+import { generateOutline } from "@/lib/gemini";
+
+export const maxDuration = 300;
 
 function parseTexts(value: FormDataEntryValue | null): { name: string; text: string }[] {
     if (typeof value !== "string" || !value) return [];
@@ -57,9 +59,12 @@ export async function POST(req: Request) {
             }
         }
 
+        // Step 1 of generation: topic outline + quiz + PYQ analysis. Topics are written one by one via /api/generate/topic.
+        // Files the server had to parse itself are sent back so the browser can pick passages from them for each topic.
+        const serverParsed = files.length ? sources.slice(-files.length) : [];
         let generatedContent;
         try {
-            generatedContent = await generateNotes(syllabus, sources, pyqs);
+            generatedContent = { ...(await generateOutline(syllabus, sources, pyqs)), serverParsed };
         } catch (error) {
             console.error("AI Generation error:", error);
             return NextResponse.json({

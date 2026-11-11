@@ -2,8 +2,6 @@ import { auth } from "@/lib/auth";
 import { PrismaClient, Prisma } from "@/generated/prisma";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { parseFile } from "@/lib/parsing";
-import { generateNotes } from "@/lib/gemini";
 
 const prisma = new PrismaClient();
 
