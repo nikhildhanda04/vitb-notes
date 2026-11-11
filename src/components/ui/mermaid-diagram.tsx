@@ -9,6 +9,7 @@ mermaid.initialize({
     theme: "default",
     securityLevel: "loose",
     suppressErrorRendering: true, // don't append mermaid's own error graphic to the page
+    flowchart: { useMaxWidth: false }, // keep natural size; wide charts scroll instead of shrinking to unreadable text
 })
 
 interface MermaidDiagramProps {
@@ -54,7 +55,7 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
     return (
         <div
             ref={ref}
-            className={`flex justify-center my-6 overflow-x-auto transition-all duration-300 ${loading ? 'min-h-[100px] items-center' : ''}`}
+            className={`my-6 overflow-x-auto transition-all duration-300 ${loading ? 'flex justify-center min-h-[100px] items-center' : ''}`}
         >
             {loading ? (
                 <div className="flex flex-col items-center gap-2 text-neutral-400 animate-pulse">
@@ -62,7 +63,8 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
                     <span className="text-sm">Loading diagram...</span>
                 </div>
             ) : (
-                <div dangerouslySetInnerHTML={{ __html: svg }} />
+                // White panel so the default theme's dark lines and text stay readable in dark mode
+                <div className="w-fit mx-auto bg-white rounded-lg p-4" dangerouslySetInnerHTML={{ __html: svg }} />
             )}
         </div>
     )

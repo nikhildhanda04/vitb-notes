@@ -9,6 +9,7 @@ import "katex/dist/katex.min.css"
 import { MermaidDiagram } from "@/components/ui/mermaid-diagram"
 import { CodeBlock } from "@/components/ui/code-block"
 import { cn } from "@/lib/utils"
+import { remarkNoIndentedCode } from "@/lib/remark-no-indented-code"
 
 interface NoteContentProps {
     content: string
@@ -70,7 +71,7 @@ export const NoteContent = React.memo(function NoteContent({ content, font, font
             style={{ fontSize: `${fontSize}px` }}
         >
             <ReactMarkdown
-                remarkPlugins={[remarkMath, remarkGfm]}
+                remarkPlugins={[remarkMath, remarkGfm, remarkNoIndentedCode]}
                 rehypePlugins={[rehypeKatex]}
                 components={components}
             >
